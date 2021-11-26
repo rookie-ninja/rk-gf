@@ -1,6 +1,7 @@
 # rk-echo
 [![build](https://github.com/rookie-ninja/rk-gf/actions/workflows/ci.yml/badge.svg)](https://github.com/rookie-ninja/rk-gf/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rookie-ninja/rk-gf)](https://goreportcard.com/report/github.com/rookie-ninja/rk-gf)
+[![codecov](https://codecov.io/gh/rookie-ninja/rk-gf/branch/master/graph/badge.svg?token=E4JQQ0KCHB)](https://codecov.io/gh/rookie-ninja/rk-gf)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 Interceptor & bootstrapper designed for GoFrame framework. Currently, supports bellow functionalities.
