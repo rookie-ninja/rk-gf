@@ -21,8 +21,6 @@ Interceptor & bootstrapper designed for GoFrame framework. Currently, supports b
 | Meta interceptor | Send application metadata as header to client. |
 | Auth interceptor | Support [Basic Auth] and [API Key] authorization types. |
 | RateLimit interceptor | Limiting RPC rate |
-| Timeout interceptor | Timing out request by configuration. |
-| Gzip interceptor | Compress and Decompress message body based on request header. |
 | CORS interceptor | Server side CORS interceptor. |
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
