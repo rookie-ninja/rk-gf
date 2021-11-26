@@ -161,7 +161,7 @@ func assertNotPanic(t *testing.T) {
 
 func startServer(t *testing.T, path string, usherHandler ghttp.HandlerFunc, inters ...ghttp.HandlerFunc) *ghttp.Server {
 	server := g.Server(time.Now())
-	server.SetPort(8080)
+	server.SetPort(8089)
 	server.SetDumpRouterMap(false)
 	server.BindMiddlewareDefault(inters...)
 	server.BindHandler(path, usherHandler)
@@ -175,7 +175,7 @@ func getClient() *ghttp.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)
-	client.SetPrefix("http://127.0.0.1:8080")
+	client.SetPrefix("http://127.0.0.1:8089")
 
 	return client
 }
