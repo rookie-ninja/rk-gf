@@ -60,7 +60,7 @@ func TestGetMetricsSet(t *testing.T) {
 
 func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.HandlerFunc) *ghttp.Server {
 	server := g.Server(rkcommon.GenerateRequestId())
-	server.SetPort(8085)
+	server.SetPort(8080)
 	server.SetDumpRouterMap(false)
 	server.BindMiddlewareDefault(inters...)
 	server.BindHandler("/ut", usherHandler)
@@ -75,7 +75,7 @@ func getClient() *ghttp.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)
-	client.SetPrefix("http://127.0.0.1:8085")
+	client.SetPrefix("http://127.0.0.1:8080")
 
 	return client
 }
