@@ -1,4 +1,4 @@
-# rk-echo
+# rk-gf
 [![build](https://github.com/rookie-ninja/rk-gf/actions/workflows/ci.yml/badge.svg)](https://github.com/rookie-ninja/rk-gf/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rookie-ninja/rk-gf)](https://goreportcard.com/report/github.com/rookie-ninja/rk-gf)
 [![codecov](https://codecov.io/gh/rookie-ninja/rk-gf/branch/master/graph/badge.svg?token=E4JQQ0KCHB)](https://codecov.io/gh/rookie-ninja/rk-gf)
