@@ -53,6 +53,8 @@ const (
 	RpcAuthorizationHeaderKey = "authorization"
 	// RpcApiKeyHeaderKey api auth key
 	RpcApiKeyHeaderKey = "X-API-Key"
+	// RpcJwtTokenKey key of jwt token in context
+	RpcJwtTokenKey = "gfJwt"
 )
 
 // GetRemoteAddressSet returns remote endpoint information set including IP, Port.

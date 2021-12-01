@@ -9,6 +9,7 @@ package rkgfctx
 import (
 	"context"
 	"github.com/gogf/gf/v2/net/ghttp"
+	"github.com/golang-jwt/jwt"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
@@ -214,4 +215,19 @@ func EndTraceSpan(ctx *ghttp.Request, span trace.Span, success bool) {
 	}
 
 	span.End()
+}
+
+// GetJwtToken return jwt.Token if exists
+func GetJwtToken(ctx *ghttp.Request) *jwt.Token {
+	if ctx == nil {
+		return nil
+	}
+
+	if raw := ctx.GetCtxVar(rkgfinter.RpcJwtTokenKey); raw != nil {
+		if res, ok := raw.Interface().(*jwt.Token); ok {
+			return res
+		}
+	}
+
+	return nil
 }

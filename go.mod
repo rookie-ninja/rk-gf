@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/gogf/gf/v2 v2.0.0-beta
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/juju/ratelimit v1.0.1
 	github.com/markbates/pkger v0.17.1
 	github.com/prometheus/client_golang v1.10.0

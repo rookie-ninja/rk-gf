@@ -22,6 +22,7 @@ Interceptor & bootstrapper designed for GoFrame framework. Currently, supports b
 | Auth interceptor | Support [Basic Auth] and [API Key] authorization types. |
 | RateLimit interceptor | Limiting RPC rate |
 | CORS interceptor | Server side CORS interceptor. |
+| JWT interceptor | Server side JWT interceptor. |
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -51,6 +52,7 @@ Interceptor & bootstrapper designed for GoFrame framework. Currently, supports b
     - [Tracing](#tracing)
     - [RateLimit](#ratelimit)
     - [CORS](#cors)
+    - [JWT](#jwt)
   - [Development Status: Beta](#development-status-beta)
   - [Contributing](#contributing)
 
@@ -395,6 +397,43 @@ Send application metadata as header to client.
 | gf.interceptors.cors.allowCredentials | Returns as response header of OPTIONS request. | bool | false |
 | gf.interceptors.cors.exposeHeaders | Provide exposed headers returns as response header of OPTIONS request. | []string | "" |
 | gf.interceptors.cors.maxAge | Provide max age returns as response header of OPTIONS request. | int | 0 |
+
+#### JWT
+In order to make swagger UI and RK tv work under JWT without JWT token, we need to ignore prefixes of paths as bellow.
+
+```yaml
+jwt:
+  ...
+  ignorePrefix:
+   - "/rk/v1/tv"
+   - "/sw"
+   - "/rk/v1/assets"
+```
+
+| name | description | type | default value |
+| ------ | ------ | ------ | ------ |
+| gf.interceptors.jwt.enabled | Enable JWT interceptor | boolean | false |
+| gf.interceptors.jwt.signingKey | Required, Provide signing key. | string | "" |
+| gf.interceptors.jwt.ignorePrefix | Provide ignoring path prefix. | []string | [] |
+| gf.interceptors.jwt.signingKeys | Provide signing keys as scheme of <key>:<value>. | []string | [] |
+| gf.interceptors.jwt.signingAlgo | Provide signing algorithm. | string | HS256 |
+| gf.interceptors.jwt.tokenLookup | Provide token lookup scheme, please see bellow description. | string | "header:Authorization" |
+| gf.interceptors.jwt.authScheme | Provide auth scheme. | string | Bearer |
+
+The supported scheme of **tokenLookup** 
+
+```
+// Optional. Default value "header:Authorization".
+// Possible values:
+// - "header:<name>"
+// - "query:<name>"
+// - "param:<name>"
+// - "cookie:<name>"
+// - "form:<name>"
+// Multiply sources example:
+// - "header: Authorization,cookie: myowncookie"
+```
+
 
 ### Development Status: Beta
 
