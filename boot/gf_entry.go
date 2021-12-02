@@ -15,12 +15,13 @@ import (
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/auth"
 	"github.com/rookie-ninja/rk-gf/interceptor/cors"
-	rkgfjwt "github.com/rookie-ninja/rk-gf/interceptor/jwt"
+	"github.com/rookie-ninja/rk-gf/interceptor/jwt"
 	"github.com/rookie-ninja/rk-gf/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-gf/interceptor/meta"
 	"github.com/rookie-ninja/rk-gf/interceptor/metrics/prom"
 	"github.com/rookie-ninja/rk-gf/interceptor/panic"
 	"github.com/rookie-ninja/rk-gf/interceptor/ratelimit"
+	"github.com/rookie-ninja/rk-gf/interceptor/secure"
 	"github.com/rookie-ninja/rk-gf/interceptor/tracing/telemetry"
 	"github.com/rookie-ninja/rk-prom"
 	"github.com/rookie-ninja/rk-query"
@@ -135,6 +136,19 @@ type BootConfigGf struct {
 				TokenLookup  string   `yaml:"tokenLookup" json:"tokenLookup"`
 				AuthScheme   string   `yaml:"authScheme" json:"authScheme"`
 			} `yaml:"jwt" json:"jwt"`
+			Secure struct {
+				Enabled               bool     `yaml:"enabled" json:"enabled"`
+				IgnorePrefix          []string `yaml:"ignorePrefix" json:"ignorePrefix"`
+				XssProtection         string   `yaml:"xssProtection" json:"xssProtection"`
+				ContentTypeNosniff    string   `yaml:"contentTypeNosniff" json:"contentTypeNosniff"`
+				XFrameOptions         string   `yaml:"xFrameOptions" json:"xFrameOptions"`
+				HstsMaxAge            int      `yaml:"hstsMaxAge" json:"hstsMaxAge"`
+				HstsExcludeSubdomains bool     `yaml:"hstsExcludeSubdomains" json:"hstsExcludeSubdomains"`
+				HstsPreloadEnabled    bool     `yaml:"hstsPreloadEnabled" json:"hstsPreloadEnabled"`
+				ContentSecurityPolicy string   `yaml:"contentSecurityPolicy" json:"contentSecurityPolicy"`
+				CspReportOnly         bool     `yaml:"cspReportOnly" json:"cspReportOnly"`
+				ReferrerPolicy        string   `yaml:"referrerPolicy" json:"referrerPolicy"`
+			} `yaml:"secure" json:"secure"`
 			RateLimit struct {
 				Enabled   bool   `yaml:"enabled" json:"enabled"`
 				Algorithm string `yaml:"algorithm" json:"algorithm"`
@@ -503,6 +517,25 @@ func RegisterGfEntriesWithConfig(configFilePath string) map[string]rkentry.Entry
 			}
 
 			inters = append(inters, rkgfjwt.Interceptor(opts...))
+		}
+
+		// Did we enabled secure interceptor?
+		if element.Interceptors.Secure.Enabled {
+			opts := []rkgfsec.Option{
+				rkgfsec.WithEntryNameAndType(element.Name, GfEntryType),
+				rkgfsec.WithXSSProtection(element.Interceptors.Secure.XssProtection),
+				rkgfsec.WithContentTypeNosniff(element.Interceptors.Secure.ContentTypeNosniff),
+				rkgfsec.WithXFrameOptions(element.Interceptors.Secure.XFrameOptions),
+				rkgfsec.WithHSTSMaxAge(element.Interceptors.Secure.HstsMaxAge),
+				rkgfsec.WithHSTSExcludeSubdomains(element.Interceptors.Secure.HstsExcludeSubdomains),
+				rkgfsec.WithHSTSPreloadEnabled(element.Interceptors.Secure.HstsPreloadEnabled),
+				rkgfsec.WithContentSecurityPolicy(element.Interceptors.Secure.ContentSecurityPolicy),
+				rkgfsec.WithCSPReportOnly(element.Interceptors.Secure.CspReportOnly),
+				rkgfsec.WithReferrerPolicy(element.Interceptors.Secure.ReferrerPolicy),
+				rkgfsec.WithIgnorePrefix(element.Interceptors.Secure.IgnorePrefix...),
+			}
+
+			inters = append(inters, rkgfsec.Interceptor(opts...))
 		}
 
 		// Did we enabled cors interceptor?

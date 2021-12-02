@@ -23,6 +23,7 @@ Interceptor & bootstrapper designed for GoFrame framework. Currently, supports b
 | RateLimit interceptor | Limiting RPC rate |
 | CORS interceptor | Server side CORS interceptor. |
 | JWT interceptor | Server side JWT interceptor. |
+| Secure interceptor | Server side Secure interceptor. |
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -53,6 +54,7 @@ Interceptor & bootstrapper designed for GoFrame framework. Currently, supports b
     - [RateLimit](#ratelimit)
     - [CORS](#cors)
     - [JWT](#jwt)
+    - [Secure](#secure)
   - [Development Status: Beta](#development-status-beta)
   - [Contributing](#contributing)
 
@@ -434,6 +436,20 @@ The supported scheme of **tokenLookup**
 // - "header: Authorization,cookie: myowncookie"
 ```
 
+#### Secure
+| name | description | type | default value |
+| ------ | ------ | ------ | ------ |
+| gf.interceptors.secure.enabled | Enable secure interceptor | boolean | false |
+| gf.interceptors.secure.xssProtection | X-XSS-Protection header value. | string | "1; mode=block" |
+| gf.interceptors.secure.contentTypeNosniff | X-Content-Type-Options header value. | string | nosniff |
+| gf.interceptors.secure.xFrameOptions | X-Frame-Options header value. | string | SAMEORIGIN |
+| gf.interceptors.secure.hstsMaxAge | Strict-Transport-Security header value. | int | 0 |
+| gf.interceptors.secure.hstsExcludeSubdomains | Excluding subdomains of HSTS. | bool | false |
+| gf.interceptors.secure.hstsPreloadEnabled | Enabling HSTS preload. | bool | false |
+| gf.interceptors.secure.contentSecurityPolicy | Content-Security-Policy header value. | string | "" |
+| gf.interceptors.secure.cspReportOnly | Content-Security-Policy-Report-Only header value. | bool | false |
+| gf.interceptors.secure.referrerPolicy | Referrer-Policy header value. | string | "" |
+| gf.interceptors.secure.ignorePrefix | Ignoring path prefix. | []string | [] |
 
 ### Development Status: Beta
 
