@@ -59,6 +59,8 @@ gf:
         enabled: true
       secure:
         enabled: true
+      csrf:
+        enabled: true
   - name: greeter2
     port: 2008
     enabled: true

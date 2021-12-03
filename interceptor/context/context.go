@@ -231,3 +231,16 @@ func GetJwtToken(ctx *ghttp.Request) *jwt.Token {
 
 	return nil
 }
+
+// GetCsrfToken return csrf token if exists
+func GetCsrfToken(ctx *ghttp.Request) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if raw := ctx.GetCtxVar(rkgfinter.RpcCsrfTokenKey); raw != nil {
+		return raw.String()
+	}
+
+	return ""
+}
