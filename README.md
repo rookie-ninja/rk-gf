@@ -14,6 +14,7 @@ Interceptor & bootstrapper designed for GoFrame framework. Currently, supports b
 | Swagger Service | Swagger UI. |
 | Common Service | List of common API available on GoFrame. |
 | TV Service | A Web UI shows application and environment information. |
+| Static file handler | A Web UI shows files could be downloaded from server, currently support source of local and pkger. |
 | Metrics interceptor | Collect RPC metrics and export as prometheus client. |
 | Log interceptor | Log every RPC requests as event with rk-query. |
 | Trace interceptor | Collect RPC trace and export it to stdout, file or jaeger. |
@@ -46,6 +47,7 @@ Interceptor & bootstrapper designed for GoFrame framework. Currently, supports b
   - [Swagger Service](#swagger-service-1)
   - [Prom Client](#prom-client)
   - [TV Service](#tv-service-1)
+  - [Static file handler Service](#static-file-handler-service)
   - [Interceptors](#interceptors)
     - [Log](#log)
     - [Metrics](#metrics-1)
@@ -283,6 +285,19 @@ User can start multiple GoFrame servers at the same time. Please make sure use d
 | name | description | type | default value |
 | ------ | ------ | ------ | ------ |
 | gf.tv.enabled | Enable RK TV | boolean | false |
+
+### Static file handler Service
+| name | description | type | default value |
+| ------ | ------ | ------ | ------ |
+| gf.static.enabled | Optional, Enable static file handler | boolean | false |
+| gf.static.path | Optional, path of static file handler | string | /rk/v1/static |
+| gf.static.sourceType | Required, local and pkger supported | string | "" |
+| gf.static.sourcePath | Required, full path of source directory | string | "" |
+
+- About [pkger](https://github.com/markbates/pkger)
+User can use pkger command line tool to embed static files into .go files.
+
+Please use sourcePath like: github.com/rookie-ninja/rk-gf:/boot/assets
 
 ### Interceptors
 #### Log

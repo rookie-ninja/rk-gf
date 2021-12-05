@@ -10,6 +10,7 @@ import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
+	rkcommon "github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-entry/entry"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
@@ -160,7 +161,7 @@ func assertNotPanic(t *testing.T) {
 }
 
 func startServer(t *testing.T, path string, usherHandler ghttp.HandlerFunc, inters ...ghttp.HandlerFunc) *ghttp.Server {
-	server := g.Server(time.Now())
+	server := g.Server(rkcommon.GenerateRequestId())
 	server.SetPort(8080)
 	server.SetDumpRouterMap(false)
 	server.BindMiddlewareDefault(inters...)
