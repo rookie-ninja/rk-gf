@@ -468,6 +468,12 @@ func doReq(ctx *ghttp.Request) *rkentry.ReqResponse {
 	}
 
 	vector := metricsSet.GetSummary(rkgfmetrics.ElapsedNano)
+	if vector == nil {
+		return &rkentry.ReqResponse{
+			Metrics: make([]*rkentry.ReqMetricsRK, 0),
+		}
+	}
+
 	reqMetrics := rkentry.NewPromMetricsInfo(vector)
 
 	// Fill missed metrics
