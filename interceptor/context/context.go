@@ -9,7 +9,7 @@ package rkgfctx
 import (
 	"context"
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"

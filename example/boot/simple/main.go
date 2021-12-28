@@ -6,8 +6,10 @@ package main
 
 import (
 	"context"
+	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/rookie-ninja/rk-entry/entry"
 	"github.com/rookie-ninja/rk-gf/boot"
+	"net/http"
 )
 
 func main() {
@@ -17,12 +19,21 @@ func main() {
 	// Bootstrap gf entry from boot config
 	res := rkgf.RegisterGfEntriesWithConfig("example/boot/simple/boot.yaml")
 
+	// Get rkgf.GfEntry
+	gfEntry := res["greeter"].(*rkgf.GfEntry)
+	gfEntry.Server.BindHandler("/v1/greeter", func(ctx *ghttp.Request) {
+		ctx.Response.WriteHeader(http.StatusOK)
+		ctx.Response.WriteJson(map[string]string{
+			"message": "Hello!",
+		})
+	})
+
 	// Bootstrap gf entry
-	res["greeter"].Bootstrap(context.Background())
+	gfEntry.Bootstrap(context.Background())
 
 	// Wait for shutdown signal
 	rkentry.GlobalAppCtx.WaitForShutdownSig()
 
 	// Interrupt gf entry
-	res["greeter"].Interrupt(context.Background())
+	gfEntry.Interrupt(context.Background())
 }

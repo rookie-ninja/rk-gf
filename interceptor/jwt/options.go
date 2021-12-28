@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/rookie-ninja/rk-common/error"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"net/http"

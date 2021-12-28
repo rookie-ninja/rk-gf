@@ -55,9 +55,6 @@ func TestStaticFileHandlerEntry_Bootstrap(t *testing.T) {
 	// without eventId in context
 	entry := NewStaticFileHandlerEntry()
 	entry.Bootstrap(context.TODO())
-
-	// with eventId in context
-	entry.Bootstrap(context.WithValue(context.TODO(), bootstrapEventIdKey, "ut-event-id"))
 }
 
 func TestStaticFileHandlerEntry_Interrupt(t *testing.T) {
@@ -66,9 +63,6 @@ func TestStaticFileHandlerEntry_Interrupt(t *testing.T) {
 	// without eventId in context
 	entry := NewStaticFileHandlerEntry()
 	entry.Interrupt(context.TODO())
-
-	// with eventId in context
-	entry.Interrupt(context.WithValue(context.TODO(), bootstrapEventIdKey, "ut-event-id"))
 }
 
 func TestStaticFileHandlerEntry_EntryFunctions(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/auth"
 	"github.com/rookie-ninja/rk-gf/interceptor/cors"
-	rkgfcsrf "github.com/rookie-ninja/rk-gf/interceptor/csrf"
+	"github.com/rookie-ninja/rk-gf/interceptor/csrf"
 	"github.com/rookie-ninja/rk-gf/interceptor/jwt"
 	"github.com/rookie-ninja/rk-gf/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-gf/interceptor/meta"
@@ -47,10 +47,6 @@ const (
 	// GfEntryDescription description of entry
 	GfEntryDescription = "Internal RK entry which helps to bootstrap with GoFrame framework."
 )
-
-var bootstrapEventIdKey = eventIdKey{}
-
-type eventIdKey struct{}
 
 // This must be declared in order to register registration function into rk context
 // otherwise, rk-boot won't able to bootstrap GoFrame entry automatically from boot config file
@@ -213,18 +209,18 @@ type BootConfigGf struct {
 type GfEntry struct {
 	EntryName          string                    `json:"entryName" yaml:"entryName"`
 	EntryType          string                    `json:"entryType" yaml:"entryType"`
-	EntryDescription   string                    `json:"entryDescription" yaml:"entryDescription"`
-	ZapLoggerEntry     *rkentry.ZapLoggerEntry   `json:"zapLoggerEntry" yaml:"zapLoggerEntry"`
-	EventLoggerEntry   *rkentry.EventLoggerEntry `json:"eventLoggerEntry" yaml:"eventLoggerEntry"`
+	EntryDescription   string                    `json:"-" yaml:"-"`
+	ZapLoggerEntry     *rkentry.ZapLoggerEntry   `json:"-" yaml:"-"`
+	EventLoggerEntry   *rkentry.EventLoggerEntry `json:"-" yaml:"-"`
 	Port               uint64                    `json:"port" yaml:"port"`
 	Server             *ghttp.Server             `json:"-" yaml:"-"`
-	CertEntry          *rkentry.CertEntry        `json:"certEntry" yaml:"certEntry"`
-	SwEntry            *SwEntry                  `json:"swEntry" yaml:"swEntry"`
-	CommonServiceEntry *CommonServiceEntry       `json:"commonServiceEntry" yaml:"commonServiceEntry"`
+	CertEntry          *rkentry.CertEntry        `json:"-" yaml:"-"`
+	SwEntry            *SwEntry                  `json:"-" yaml:"-"`
+	CommonServiceEntry *CommonServiceEntry       `json:"-" yaml:"-"`
 	Interceptors       []ghttp.HandlerFunc       `json:"-" yaml:"-"`
-	PromEntry          *PromEntry                `json:"promEntry" yaml:"promEntry"`
-	StaticFileEntry    *StaticFileHandlerEntry   `json:"staticFileHandlerEntry" yaml:"staticFileHandlerEntry"`
-	TvEntry            *TvEntry                  `json:"tvEntry" yaml:"tvEntry"`
+	PromEntry          *PromEntry                `json:"-" yaml:"-"`
+	StaticFileEntry    *StaticFileHandlerEntry   `json:"-" yaml:"-"`
+	TvEntry            *TvEntry                  `json:"-" yaml:"-"`
 }
 
 // GfEntryOption Gf entry option.
@@ -771,15 +767,7 @@ func RegisterGfEntry(opts ...GfEntryOption) *GfEntry {
 
 // Bootstrap GfEntry.
 func (entry *GfEntry) Bootstrap(ctx context.Context) {
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"bootstrap",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	entry.logBasicInfo(event)
-
-	ctx = context.WithValue(context.Background(), bootstrapEventIdKey, event.GetEventId())
-	logger := entry.ZapLoggerEntry.GetLogger().With(zap.String("eventId", event.GetEventId()))
+	event, logger := entry.logBasicInfo("Bootstrap")
 
 	// Is swagger enabled?
 	if entry.IsSwEnabled() {
@@ -845,8 +833,6 @@ func (entry *GfEntry) Bootstrap(ctx context.Context) {
 	// Default interceptor should be at front
 	entry.Server.Use(entry.Interceptors...)
 
-	logger.Info("Bootstrapping GfEntry.", event.ListPayloads()...)
-
 	go func(gfEntry *GfEntry) {
 		if entry.Server != nil {
 			// If TLS was enabled, we need to load server certificate and key and start http server with ListenAndServeTLS()
@@ -875,15 +861,7 @@ func (entry *GfEntry) Bootstrap(ctx context.Context) {
 
 // Interrupt GfEntry.
 func (entry *GfEntry) Interrupt(ctx context.Context) {
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"interrupt",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	ctx = context.WithValue(context.Background(), bootstrapEventIdKey, event.GetEventId())
-	logger := entry.ZapLoggerEntry.GetLogger().With(zap.String("eventId", event.GetEventId()))
-
-	entry.logBasicInfo(event)
+	event, logger := entry.logBasicInfo("Interrupt")
 
 	if entry.IsSwEnabled() {
 		// Interrupt swagger entry
@@ -911,7 +889,6 @@ func (entry *GfEntry) Interrupt(ctx context.Context) {
 	}
 
 	if entry.Server != nil {
-		logger.Info("Interrupting GfEntry.", event.ListPayloads()...)
 		if err := entry.Server.Shutdown(); err != nil {
 			event.AddErr(err)
 			logger.Warn("Error occurs while stopping gf-server.", event.ListPayloads()...)
@@ -1015,10 +992,62 @@ func (entry *GfEntry) UnmarshalJSON([]byte) error {
 }
 
 // Add basic fields into event.
-func (entry *GfEntry) logBasicInfo(event rkquery.Event) {
+func (entry *GfEntry) logBasicInfo(operation string) (rkquery.Event, *zap.Logger) {
+	event := entry.EventLoggerEntry.GetEventHelper().Start(
+		operation,
+		rkquery.WithEntryName(entry.GetName()),
+		rkquery.WithEntryType(entry.GetType()))
+	logger := entry.ZapLoggerEntry.GetLogger().With(
+		zap.String("eventId", event.GetEventId()),
+		zap.String("entryName", entry.EntryName))
+
+	// add general info
 	event.AddPayloads(
-		zap.String("entryName", entry.EntryName),
-		zap.String("entryType", entry.EntryType),
-		zap.Uint64("port", entry.Port),
-	)
+		zap.Uint64("gfPort", entry.Port))
+
+	// add SwEntry info
+	if entry.IsSwEnabled() {
+		event.AddPayloads(
+			zap.Bool("swEnabled", true),
+			zap.String("swPath", entry.SwEntry.Path))
+	}
+
+	// add CommonServiceEntry info
+	if entry.IsCommonServiceEnabled() {
+		event.AddPayloads(
+			zap.Bool("commonServiceEnabled", true),
+			zap.String("commonServicePathPrefix", "/rk/v1/"))
+	}
+
+	// add TvEntry info
+	if entry.IsTvEnabled() {
+		event.AddPayloads(
+			zap.Bool("tvEnabled", true),
+			zap.String("tvPath", "/rk/v1/tv/"))
+	}
+
+	// add PromEntry info
+	if entry.IsPromEnabled() {
+		event.AddPayloads(
+			zap.Bool("promEnabled", true),
+			zap.Uint64("promPort", entry.PromEntry.Port),
+			zap.String("promPath", entry.PromEntry.Path))
+	}
+
+	// add StaticFileHandlerEntry info
+	if entry.IsStaticFileHandlerEnabled() {
+		event.AddPayloads(
+			zap.Bool("staticFileHandlerEnabled", true),
+			zap.String("staticFileHandlerPath", entry.StaticFileEntry.Path))
+	}
+
+	// add tls info
+	if entry.IsTlsEnabled() {
+		event.AddPayloads(
+			zap.Bool("tlsEnabled", true))
+	}
+
+	logger.Info(fmt.Sprintf("%s gfEntry", operation))
+
+	return event, logger
 }

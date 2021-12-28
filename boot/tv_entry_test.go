@@ -10,7 +10,7 @@ import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
-	rkcommon "github.com/rookie-ninja/rk-common/common"
+	"github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-entry/entry"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
@@ -37,8 +37,7 @@ func TestTvEntry_Bootstrap(t *testing.T) {
 		WithEventLoggerEntryTv(rkentry.NoopEventLoggerEntry()),
 		WithZapLoggerEntryTv(rkentry.NoopZapLoggerEntry()))
 
-	ctx := context.WithValue(context.Background(), bootstrapEventIdKey, "ut")
-	entry.Bootstrap(ctx)
+	entry.Bootstrap(context.TODO())
 }
 
 func TestTvEntry_Interrupt(t *testing.T) {
@@ -46,8 +45,7 @@ func TestTvEntry_Interrupt(t *testing.T) {
 		WithEventLoggerEntryTv(rkentry.NoopEventLoggerEntry()),
 		WithZapLoggerEntryTv(rkentry.NoopZapLoggerEntry()))
 
-	ctx := context.WithValue(context.Background(), bootstrapEventIdKey, "ut")
-	entry.Interrupt(ctx)
+	entry.Interrupt(context.TODO())
 }
 
 func TestTvEntry_TV(t *testing.T) {

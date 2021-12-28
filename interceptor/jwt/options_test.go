@@ -8,7 +8,7 @@ package rkgfjwt
 import (
 	"bytes"
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
