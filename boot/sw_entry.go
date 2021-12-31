@@ -264,7 +264,7 @@ func (entry *SwEntry) ConfigFileHandler() ghttp.HandlerFunc {
 		}
 
 		switch p {
-		case "/sw":
+		case strings.TrimSuffix(entry.Path, "/"):
 			var file io.ReadSeeker
 			var err error
 
@@ -274,10 +274,10 @@ func (entry *SwEntry) ConfigFileHandler() ghttp.HandlerFunc {
 			}
 
 			http.ServeContent(w, r, "index.html", time.Now(), file)
-		case "/sw/swagger-config.json":
+		case path.Join(entry.Path, "swagger-config.json"):
 			http.ServeContent(w, r, "swagger-config.json", time.Now(), strings.NewReader(swConfigFileContents))
 		default:
-			p = strings.TrimPrefix(p, "/sw/")
+			p = strings.TrimPrefix(p, entry.Path)
 			value, ok := swaggerJsonFiles[p]
 
 			if ok {
