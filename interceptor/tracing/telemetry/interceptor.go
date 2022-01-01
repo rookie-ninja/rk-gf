@@ -40,7 +40,7 @@ func before(ctx *ghttp.Request, set *optionSet) oteltrace.Span {
 	opts := []oteltrace.SpanStartOption{
 		oteltrace.WithAttributes(semconv.NetAttributesFromHTTPRequest("tcp", ctx.Request)...),
 		oteltrace.WithAttributes(semconv.EndUserAttributesFromHTTPRequest(ctx.Request)...),
-		oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(rkentry.GlobalAppCtx.GetAppInfoEntry().AppName, ctx.RequestURI, ctx.Request)...),
+		oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(rkentry.GlobalAppCtx.GetAppInfoEntry().AppName, ctx.Request.URL.Path, ctx.Request)...),
 		oteltrace.WithAttributes(localeToAttributes()...),
 		oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 	}
@@ -49,7 +49,7 @@ func before(ctx *ghttp.Request, set *optionSet) oteltrace.Span {
 	spanCtx := oteltrace.SpanContextFromContext(
 		set.Propagator.Extract(ctx.Request.Context(), propagation.HeaderCarrier(ctx.Request.Header)))
 
-	spanName := ctx.RequestURI
+	spanName := ctx.Request.URL.Path
 	if len(spanName) < 1 {
 		spanName = "rk-span-default"
 	}
