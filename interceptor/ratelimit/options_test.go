@@ -10,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -125,7 +126,9 @@ func TestOptionSet_Wait(t *testing.T) {
 
 	ctx := &ghttp.Request{
 		Request: &http.Request{
-			RequestURI: "/ut-path",
+			URL: &url.URL{
+				Path: "/ut-path",
+			},
 		},
 	}
 	set.Wait(ctx)

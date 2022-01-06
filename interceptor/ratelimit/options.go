@@ -142,7 +142,7 @@ func newOptionSet(opts ...Option) *optionSet {
 func (set *optionSet) Wait(ctx *ghttp.Request) (time.Duration, error) {
 	now := time.Now()
 
-	limiter := set.getLimiter(ctx.RequestURI)
+	limiter := set.getLimiter(ctx.URL.Path)
 	if err := limiter(ctx); err != nil {
 		return now.Sub(now), err
 	}
