@@ -36,7 +36,7 @@ import     "github.com/rookie-ninja/rk-gf/interceptor/jwt"
 	interceptors := []ghttp.HandlerFunc{
         rkgfjwt.Interceptor(
 			// Required, provide signing key.
-			rkgfjwt.WithSigningKey([]byte("my-secret")),
+			rkmidjwt.WithSigningKey([]byte("my-secret")),
         ),
     }
 ```
@@ -44,17 +44,17 @@ import     "github.com/rookie-ninja/rk-gf/interceptor/jwt"
 ## Options
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkgfjwt.WithEntryNameAndType(entryName, entryType string) | Optional. Provide entry name and type if there are multiple jwt interceptors needs to be used. | gf, gf |
-| rkgfjwt.WithSkipper(skipper function) | Optional. Provide skipper function | function always returns false |
-| rkgfjwt.WithSigningKey(interface{}) | Required. Provide signing key | nil |
-| rkgfjwt.WithSigningKeys(string, interface{}) | Optional. Provide signing key value pairs | empty |
-| rkgfjwt.WithSigningAlgorithm(string) | Optional, Provide signing algorithm. | HS256 |
-| rkgfjwt.WithClaims(jwt.Claims) | Optional, provide jwt.Claims. | jwt.MapClaims{} |
-| rkgfjwt.WithTokenLookup(string) | Optional, provide jwt token lookup rules, please see code comments for details. | "header:Authorization" |
-| rkgfjwt.WithAuthScheme(string) | Optional, provide auth scheme. | Bearer |
-| rkgfjwt.WithKeyFunc(jwt.Keyfunc) | Optional, provide key function. | default function will be assigned. |
-| rkgfjwt.WithParseTokenFunc(func) | Optional, provide token parse function. | default function will be assigned. | 
-| rkgfjwt.WithIgnorePrefix([]string) | Optional, provide ignoring path prefix. | [] |
+| rkmidjwt.WithEntryNameAndType(entryName, entryType string) | Optional. Provide entry name and type if there are multiple jwt interceptors needs to be used. | gin, gin |
+| rkmidjwt.WithIgnorePrefix(string...) | Optional. Provide ignore path | [] |
+| rkmidjwt.WithSigningKey(interface{}) | Required. Provide signing key | nil |
+| rkmidjwt.WithSigningKeys(string, interface{}) | Optional. Provide signing key value pairs | empty |
+| rkmidjwt.WithSigningAlgorithm(string) | Optional, Provide signing algorithm. | HS256 |
+| rkmidjwt.WithClaims(jwt.Claims) | Optional, provide jwt.Claims. | jwt.MapClaims{} |
+| rkmidjwt.WithTokenLookup(string) | Optional, provide jwt token lookup rules, please see code comments for details. | "header:Authorization" |
+| rkmidjwt.WithAuthScheme(string) | Optional, provide auth scheme. | Bearer |
+| rkmidjwt.WithKeyFunc(jwt.Keyfunc) | Optional, provide key function. | default function will be assigned. |
+| rkmidjwt.WithParseTokenFunc(func) | Optional, provide token parse function. | default function will be assigned. | 
+| rkmidjwt.WithIgnorePrefix([]string) | Optional, provide ignoring path prefix. | [] |
 
 ```go
     // ********************************************

@@ -8,8 +8,11 @@ package rkgfcsrf
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/rookie-ninja/rk-common/common"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidcsrf "github.com/rookie-ninja/rk-entry/middleware/csrf"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -33,7 +36,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)
@@ -43,23 +46,11 @@ func getClient() *ghttp.Client {
 }
 
 func TestInterceptor(t *testing.T) {
-	// match 1
-	inter := Interceptor(
-		WithSkipper(func(ctx *ghttp.Request) bool {
-			return true
-		}))
+	// match 2.1
+	inter := Interceptor()
 	server := startServer(t, userHandler, inter)
 	client := getClient()
 	resp, err := client.Get(context.TODO(), "/ut")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Nil(t, server.Shutdown())
-
-	// match 2.1
-	inter = Interceptor()
-	server = startServer(t, userHandler, inter)
-	client = getClient()
-	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Nil(t, server.Shutdown())
@@ -98,7 +89,7 @@ func TestInterceptor(t *testing.T) {
 	inter = Interceptor()
 	server = startServer(t, userHandler, inter)
 	client = getClient()
-	client.SetHeader(headerXCSRFToken, "ut-csrf-token")
+	client.SetHeader(rkmid.HeaderXCSRFToken, "ut-csrf-token")
 	resp, err = client.Post(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -106,7 +97,7 @@ func TestInterceptor(t *testing.T) {
 
 	// match 4.1
 	inter = Interceptor(
-		WithCookiePath("ut-path"))
+		rkmidcsrf.WithCookiePath("ut-path"))
 	server = startServer(t, userHandler, inter)
 	client = getClient()
 	resp, err = client.Get(context.TODO(), "/ut")
@@ -117,7 +108,7 @@ func TestInterceptor(t *testing.T) {
 
 	// match 4.2
 	inter = Interceptor(
-		WithCookieDomain("ut-domain"))
+		rkmidcsrf.WithCookieDomain("ut-domain"))
 	server = startServer(t, userHandler, inter)
 	client = getClient()
 	resp, err = client.Get(context.TODO(), "/ut")
@@ -128,7 +119,7 @@ func TestInterceptor(t *testing.T) {
 
 	// match 4.3
 	inter = Interceptor(
-		WithCookieSameSite(http.SameSiteStrictMode))
+		rkmidcsrf.WithCookieSameSite(http.SameSiteStrictMode))
 	server = startServer(t, userHandler, inter)
 	client = getClient()
 	resp, err = client.Get(context.TODO(), "/ut")

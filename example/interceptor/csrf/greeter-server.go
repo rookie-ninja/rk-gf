@@ -11,6 +11,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidcsrf "github.com/rookie-ninja/rk-entry/middleware/csrf"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
 	"github.com/rookie-ninja/rk-gf/interceptor/csrf"
@@ -34,16 +35,11 @@ func main() {
 	interceptors := []ghttp.HandlerFunc{
 		rkgfcsrf.Interceptor(
 			// Required, entry name and entry type will be used for distinguishing interceptors. Recommended.
-			rkgfcsrf.WithEntryNameAndType("greeter", "echo"),
-			//
-			// Optional, provide skipper function
-			//rkgfcsrf.WithSkipper(func(e *ghttp.Request) bool {
-			//	return true
-			//}),
-			//
+			rkmidcsrf.WithEntryNameAndType("greeter", "gf"),
+			// rkmidcsrf.WithIgnorePrefix(""),
 			// WithTokenLength the length of the generated token.
 			// Optional. Default value 32.
-			//rkgfcsrf.WithTokenLength(10),
+			//rkmidcsrf.WithTokenLength(10),
 			//
 			// WithTokenLookup a string in the form of "<source>:<key>" that is used
 			// to extract token from the request.
@@ -53,31 +49,31 @@ func main() {
 			// - "form:<name>"
 			// - "query:<name>"
 			// Optional. Default value "header:X-CSRF-Token".
-			//rkgfcsrf.WithTokenLookup("header:X-CSRF-Token"),
+			//rkmidcsrf.WithTokenLookup("header:X-CSRF-Token"),
 			//
 			// WithCookieName provide name of the CSRF cookie. This cookie will store CSRF token.
 			// Optional. Default value "csrf".
-			//rkgfcsrf.WithCookieName("csrf"),
+			//rkmidcsrf.WithCookieName("csrf"),
 			//
 			// WithCookieDomain provide domain of the CSRF cookie.
 			// Optional. Default value "".
-			//rkgfcsrf.WithCookieDomain(""),
+			//rkmidcsrf.WithCookieDomain(""),
 			//
 			// WithCookiePath provide path of the CSRF cookie.
 			// Optional. Default value "".
-			//rkgfcsrf.WithCookiePath(""),
+			//rkmidcsrf.WithCookiePath(""),
 			//
 			// WithCookieMaxAge provide max age (in seconds) of the CSRF cookie.
 			// Optional. Default value 86400 (24hr).
-			//rkgfcsrf.WithCookieMaxAge(10),
+			//rkmidcsrf.WithCookieMaxAge(10),
 			//
 			// WithCookieHTTPOnly indicates if CSRF cookie is HTTP only.
 			// Optional. Default value false.
-			//rkgfcsrf.WithCookieHTTPOnly(false),
+			//rkmidcsrf.WithCookieHTTPOnly(false),
 			//
 			// WithCookieSameSite indicates SameSite mode of the CSRF cookie.
 			// Optional. Default value SameSiteDefaultMode.
-			//rkgfcsrf.WithCookieSameSite(http.SameSiteStrictMode),
+			//rkmidcsrf.WithCookieSameSite(http.SameSiteStrictMode),
 		),
 	}
 

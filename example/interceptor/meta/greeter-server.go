@@ -35,10 +35,10 @@ func main() {
 		//rkgflog.Interceptor(),
 		rkgfmeta.Interceptor(
 		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		// rkgfmeta.WithEntryNameAndType("greeter", "gf"),
+		// rkmidmeta.WithEntryNameAndType("greeter", "gin"),
 		//
 		// We will replace X-<Prefix>-XXX with prefix user provided.
-		// rkgfmeta.WithPrefix("Dog"),
+		// rkmidmeta.WithPrefix("Dog"),
 		),
 	}
 

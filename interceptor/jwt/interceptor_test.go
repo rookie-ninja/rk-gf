@@ -9,9 +9,12 @@ import (
 	"context"
 	"errors"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/rookie-ninja/rk-common/common"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	"github.com/rookie-ninja/rk-entry/middleware/jwt"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -25,35 +28,22 @@ var userHandler = func(ctx *ghttp.Request) {
 }
 
 func TestInterceptor(t *testing.T) {
-	// with skipper
-	inter := Interceptor(
-		WithSkipper(func(ctx *ghttp.Request) bool {
-			return true
-		}))
+	// without options
+	inter := Interceptor()
 	server := startServer(t, userHandler, inter)
 
 	client := getClient()
 	resp, err := client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Nil(t, server.Shutdown())
-
-	// without options
-	inter = Interceptor()
-	server = startServer(t, userHandler, inter)
-
-	client = getClient()
-	resp, err = client.Get(context.TODO(), "/ut")
-	assert.Nil(t, err)
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	assert.Nil(t, server.Shutdown())
 
 	// with parse token error
-	parseTokenErrFunc := func(auth string, c *ghttp.Request) (*jwt.Token, error) {
+	parseTokenErrFunc := func(auth string) (*jwt.Token, error) {
 		return nil, errors.New("ut-error")
 	}
 	inter = Interceptor(
-		WithParseTokenFunc(parseTokenErrFunc))
+		rkmidjwt.WithParseTokenFunc(parseTokenErrFunc))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
@@ -63,15 +53,15 @@ func TestInterceptor(t *testing.T) {
 	assert.Nil(t, server.Shutdown())
 
 	// happy case
-	parseTokenErrFunc = func(auth string, c *ghttp.Request) (*jwt.Token, error) {
+	parseTokenErrFunc = func(auth string) (*jwt.Token, error) {
 		return &jwt.Token{}, nil
 	}
 	inter = Interceptor(
-		WithParseTokenFunc(parseTokenErrFunc))
+		rkmidjwt.WithParseTokenFunc(parseTokenErrFunc))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerAuthorization, strings.Join([]string{"Bearer", "ut-auth"}, " "))
+	client.SetHeader(rkmid.HeaderAuthorization, strings.Join([]string{"Bearer", "ut-auth"}, " "))
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -90,7 +80,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

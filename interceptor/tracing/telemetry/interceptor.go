@@ -8,82 +8,38 @@ package rkgftrace
 
 import (
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/rookie-ninja/rk-entry/entry"
-	"github.com/rookie-ninja/rk-gf/interceptor"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidtrace "github.com/rookie-ninja/rk-entry/middleware/tracing"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/propagation"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 // Interceptor create a interceptor with opentelemetry.
-func Interceptor(opts ...Option) ghttp.HandlerFunc {
-	set := newOptionSet(opts...)
+func Interceptor(opts ...rkmidtrace.Option) ghttp.HandlerFunc {
+	set := rkmidtrace.NewOptionSet(opts...)
 
 	return func(ctx *ghttp.Request) {
-		ctx.SetCtxVar(rkgfinter.RpcEntryNameKey, set.EntryName)
-		ctx.SetCtxVar(rkgfinter.RpcTracerKey, set.Tracer)
-		ctx.SetCtxVar(rkgfinter.RpcTracerProviderKey, set.Provider)
-		ctx.SetCtxVar(rkgfinter.RpcPropagatorKey, set.Propagator)
+		ctx.SetCtxVar(rkmid.EntryNameKey, set.GetEntryName())
+		ctx.SetCtxVar(rkmid.TracerKey, set.GetTracer())
+		ctx.SetCtxVar(rkmid.TracerProviderKey, set.GetProvider())
+		ctx.SetCtxVar(rkmid.PropagatorKey, set.GetPropagator())
 
-		span := before(ctx, set)
-		defer span.End()
+		beforeCtx := set.BeforeCtx(ctx.Request, false)
+		set.Before(beforeCtx)
+
+		// create request with new context
+		ctx.Request = ctx.Request.WithContext(beforeCtx.Output.NewCtx)
+
+		// add to context
+		if beforeCtx.Output.Span != nil {
+			traceId := beforeCtx.Output.Span.SpanContext().TraceID().String()
+			rkgfctx.GetEvent(ctx).SetTraceId(traceId)
+			ctx.Response.Header().Set(rkmid.HeaderTraceId, traceId)
+			ctx.SetCtxVar(rkmid.SpanKey, beforeCtx.Output.Span)
+		}
 
 		ctx.Middleware.Next()
 
-		after(ctx, span)
+		afterCtx := set.AfterCtx(ctx.Response.Status, "")
+		set.After(beforeCtx, afterCtx)
 	}
-}
-
-func before(ctx *ghttp.Request, set *optionSet) oteltrace.Span {
-	opts := []oteltrace.SpanStartOption{
-		oteltrace.WithAttributes(semconv.NetAttributesFromHTTPRequest("tcp", ctx.Request)...),
-		oteltrace.WithAttributes(semconv.EndUserAttributesFromHTTPRequest(ctx.Request)...),
-		oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(rkentry.GlobalAppCtx.GetAppInfoEntry().AppName, ctx.Request.URL.Path, ctx.Request)...),
-		oteltrace.WithAttributes(localeToAttributes()...),
-		oteltrace.WithSpanKind(oteltrace.SpanKindServer),
-	}
-
-	// 1: extract tracing info from request header
-	spanCtx := oteltrace.SpanContextFromContext(
-		set.Propagator.Extract(ctx.Request.Context(), propagation.HeaderCarrier(ctx.Request.Header)))
-
-	spanName := ctx.Request.URL.Path
-	if len(spanName) < 1 {
-		spanName = "rk-span-default"
-	}
-
-	// 2: start new span
-	newRequestCtx, span := set.Tracer.Start(
-		oteltrace.ContextWithRemoteSpanContext(ctx.Request.Context(), spanCtx),
-		spanName, opts...)
-	// 2.1: pass the span through the request context
-	ctx.Request = ctx.Request.WithContext(newRequestCtx)
-
-	// 3: read trace id, tracer, traceProvider, propagator and logger into event data and echo context
-	rkgfctx.GetEvent(ctx).SetTraceId(span.SpanContext().TraceID().String())
-	ctx.Response.Header().Set(rkgfctx.TraceIdKey, span.SpanContext().TraceID().String())
-
-	ctx.SetCtxVar(rkgfinter.RpcSpanKey, span)
-	return span
-}
-
-func after(ctx *ghttp.Request, span oteltrace.Span) {
-	attrs := semconv.HTTPAttributesFromHTTPStatusCode(ctx.Response.Status)
-	spanStatus, spanMessage := semconv.SpanStatusFromHTTPStatusCode(ctx.Response.Status)
-	span.SetAttributes(attrs...)
-	span.SetStatus(spanStatus, spanMessage)
-}
-
-// Convert locale information into attributes.
-func localeToAttributes() []attribute.KeyValue {
-	res := []attribute.KeyValue{
-		attribute.String(rkgfinter.Realm.Key, rkgfinter.Realm.String),
-		attribute.String(rkgfinter.Region.Key, rkgfinter.Region.String),
-		attribute.String(rkgfinter.AZ.Key, rkgfinter.AZ.String),
-		attribute.String(rkgfinter.Domain.Key, rkgfinter.Domain.String),
-	}
-
-	return res
 }

@@ -8,8 +8,10 @@ package rkgftrace
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	rkcommon "github.com/rookie-ninja/rk-common/common"
+	rkmidtrace "github.com/rookie-ninja/rk-entry/middleware/tracing"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -18,11 +20,9 @@ import (
 )
 
 func TestInterceptor(t *testing.T) {
-	defer assertNotPanic(t)
-
 	inter := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithExporter(&NoopExporter{}))
+		rkmidtrace.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidtrace.WithExporter(&rkmidtrace.NoopExporter{}))
 	server := startServer(t, func(ctx *ghttp.Request) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}, inter)
@@ -46,7 +46,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

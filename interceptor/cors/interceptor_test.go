@@ -7,8 +7,11 @@ package rkgfcors
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/rookie-ninja/rk-common/common"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidcors "github.com/rookie-ninja/rk-entry/middleware/cors"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -23,25 +26,12 @@ var userHandler = func(ctx *ghttp.Request) {
 }
 
 func TestInterceptor(t *testing.T) {
-	// with skipper
-	inter := Interceptor(
-		WithSkipper(func(ctx *ghttp.Request) bool {
-			return true
-		}))
+	// with empty option, all request will be passed
+	inter := Interceptor()
 	server := startServer(t, userHandler, inter)
 
 	client := getClient()
 	resp, err := client.Get(context.TODO(), "/ut")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Nil(t, server.Shutdown())
-
-	// with empty option, all request will be passed
-	inter = Interceptor()
-	server = startServer(t, userHandler, inter)
-
-	client = getClient()
-	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Nil(t, server.Shutdown())
@@ -67,11 +57,11 @@ func TestInterceptor(t *testing.T) {
 	assert.Nil(t, server.Shutdown())
 
 	// match 2.1
-	inter = Interceptor(WithAllowOrigins("http://do-not-pass-through"))
+	inter = Interceptor(rkmidcors.WithAllowOrigins("http://do-not-pass-through"))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
@@ -82,40 +72,40 @@ func TestInterceptor(t *testing.T) {
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, originHeaderValue, resp.Header.Get(headerAccessControlAllowOrigin))
+	assert.Equal(t, originHeaderValue, resp.Header.Get(rkmid.HeaderAccessControlAllowOrigin))
 	assert.Nil(t, server.Shutdown())
 
 	// match 3.1
-	inter = Interceptor(WithAllowCredentials(true))
+	inter = Interceptor(rkmidcors.WithAllowCredentials(true))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, originHeaderValue, resp.Header.Get(headerAccessControlAllowOrigin))
-	assert.Equal(t, "true", resp.Header.Get(headerAccessControlAllowCredentials))
+	assert.Equal(t, originHeaderValue, resp.Header.Get(rkmid.HeaderAccessControlAllowOrigin))
+	assert.Equal(t, "true", resp.Header.Get(rkmid.HeaderAccessControlAllowCredentials))
 	assert.Nil(t, server.Shutdown())
 
 	// match 3.2
 	inter = Interceptor(
-		WithAllowCredentials(true),
-		WithExposeHeaders("expose"))
+		rkmidcors.WithAllowCredentials(true),
+		rkmidcors.WithExposeHeaders("expose"))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, originHeaderValue, resp.Header.Get(headerAccessControlAllowOrigin))
-	assert.Equal(t, "true", resp.Header.Get(headerAccessControlAllowCredentials))
-	assert.Equal(t, "expose", resp.Header.Get(headerAccessControlExposeHeaders))
+	assert.Equal(t, originHeaderValue, resp.Header.Get(rkmid.HeaderAccessControlAllowOrigin))
+	assert.Equal(t, "true", resp.Header.Get(rkmid.HeaderAccessControlAllowCredentials))
+	assert.Equal(t, "expose", resp.Header.Get(rkmid.HeaderAccessControlExposeHeaders))
 	assert.Nil(t, server.Shutdown())
 
 	// match 4
@@ -123,70 +113,70 @@ func TestInterceptor(t *testing.T) {
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Options(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.Equal(t, []string{
-		headerAccessControlRequestMethod,
-		headerAccessControlRequestHeaders,
-	}, resp.Header.Values(headerVary))
-	assert.Equal(t, originHeaderValue, resp.Header.Get(headerAccessControlAllowOrigin))
-	assert.NotEmpty(t, resp.Header.Get(headerAccessControlAllowMethods))
+		rkmid.HeaderAccessControlRequestMethod,
+		rkmid.HeaderAccessControlRequestHeaders,
+	}, resp.Header.Values(rkmid.HeaderVary))
+	assert.Equal(t, originHeaderValue, resp.Header.Get(rkmid.HeaderAccessControlAllowOrigin))
+	assert.NotEmpty(t, resp.Header.Get(rkmid.HeaderAccessControlAllowMethods))
 	assert.Nil(t, server.Shutdown())
 
 	// match 4.1
-	inter = Interceptor(WithAllowCredentials(true))
+	inter = Interceptor(rkmidcors.WithAllowCredentials(true))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Options(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.Equal(t, []string{
-		headerAccessControlRequestMethod,
-		headerAccessControlRequestHeaders,
-	}, resp.Header.Values(headerVary))
-	assert.Equal(t, originHeaderValue, resp.Header.Get(headerAccessControlAllowOrigin))
-	assert.NotEmpty(t, resp.Header.Get(headerAccessControlAllowMethods))
-	assert.Equal(t, "true", resp.Header.Get(headerAccessControlAllowCredentials))
+		rkmid.HeaderAccessControlRequestMethod,
+		rkmid.HeaderAccessControlRequestHeaders,
+	}, resp.Header.Values(rkmid.HeaderVary))
+	assert.Equal(t, originHeaderValue, resp.Header.Get(rkmid.HeaderAccessControlAllowOrigin))
+	assert.NotEmpty(t, resp.Header.Get(rkmid.HeaderAccessControlAllowMethods))
+	assert.Equal(t, "true", resp.Header.Get(rkmid.HeaderAccessControlAllowCredentials))
 	assert.Nil(t, server.Shutdown())
 
 	// match 4.2
-	inter = Interceptor(WithAllowHeaders("ut-header"))
+	inter = Interceptor(rkmidcors.WithAllowHeaders("ut-header"))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Options(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.Equal(t, []string{
-		headerAccessControlRequestMethod,
-		headerAccessControlRequestHeaders,
-	}, resp.Header.Values(headerVary))
-	assert.Equal(t, originHeaderValue, resp.Header.Get(headerAccessControlAllowOrigin))
-	assert.NotEmpty(t, resp.Header.Get(headerAccessControlAllowMethods))
-	assert.Equal(t, "ut-header", resp.Header.Get(headerAccessControlAllowHeaders))
+		rkmid.HeaderAccessControlRequestMethod,
+		rkmid.HeaderAccessControlRequestHeaders,
+	}, resp.Header.Values(rkmid.HeaderVary))
+	assert.Equal(t, originHeaderValue, resp.Header.Get(rkmid.HeaderAccessControlAllowOrigin))
+	assert.NotEmpty(t, resp.Header.Get(rkmid.HeaderAccessControlAllowMethods))
+	assert.Equal(t, "ut-header", resp.Header.Get(rkmid.HeaderAccessControlAllowHeaders))
 	assert.Nil(t, server.Shutdown())
 
 	// match 4.3
-	inter = Interceptor(WithMaxAge(1))
+	inter = Interceptor(rkmidcors.WithMaxAge(1))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerOrigin, originHeaderValue)
+	client.SetHeader(rkmid.HeaderOrigin, originHeaderValue)
 	resp, err = client.Options(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.Equal(t, []string{
-		headerAccessControlRequestMethod,
-		headerAccessControlRequestHeaders,
-	}, resp.Header.Values(headerVary))
-	assert.Equal(t, originHeaderValue, resp.Header.Get(headerAccessControlAllowOrigin))
-	assert.NotEmpty(t, resp.Header.Get(headerAccessControlAllowMethods))
-	assert.Equal(t, "1", resp.Header.Get(headerAccessControlMaxAge))
+		rkmid.HeaderAccessControlRequestMethod,
+		rkmid.HeaderAccessControlRequestHeaders,
+	}, resp.Header.Values(rkmid.HeaderVary))
+	assert.Equal(t, originHeaderValue, resp.Header.Get(rkmid.HeaderAccessControlAllowOrigin))
+	assert.NotEmpty(t, resp.Header.Get(rkmid.HeaderAccessControlAllowMethods))
+	assert.Equal(t, "1", resp.Header.Get(rkmid.HeaderAccessControlMaxAge))
 	assert.Nil(t, server.Shutdown())
 }
 
@@ -202,7 +192,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

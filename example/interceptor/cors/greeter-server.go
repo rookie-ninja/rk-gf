@@ -11,6 +11,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidcors "github.com/rookie-ninja/rk-entry/middleware/cors"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
 	"github.com/rookie-ninja/rk-gf/interceptor/cors"
@@ -34,25 +35,22 @@ func main() {
 	interceptors := []ghttp.HandlerFunc{
 		rkgfcors.Interceptor(
 			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			//rkgfcors.WithEntryNameAndType("greeter", "gf"),
-			// Provide skipper function
-			// rkgfcors.WithSkipper(func(e *ghttp.Request) bool {
-			//     return false
-			// }),
+			rkmidcors.WithEntryNameAndType("greeter", "gf"),
+			//rkmidcors.WithIgnorePrefix("/v1/greeter"),
 			// Bellow section is for CORS policy.
 			// Please refer https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS for details.
 			// Provide allowed origins
-			rkgfcors.WithAllowOrigins("http://localhost:*"),
+			rkmidcors.WithAllowOrigins("http://localhost:*"),
 			// Whether to allow credentials
-			// rkgfcors.WithAllowCredentials(true),
+			// rkmidcors.WithAllowCredentials(true),
 			// Provide expose headers
-			// rkgfcors.WithExposeHeaders(""),
+			// rkmidcors.WithExposeHeaders(""),
 			// Provide max age
-			// rkgfcors.WithMaxAge(1),
+			// rkmidcors.WithMaxAge(1),
 			// Provide allowed headers
-			// rkgfcors.WithAllowHeaders(""),
+			// rkmidcors.WithAllowHeaders(""),
 			// Provide allowed headers
-			// rkgfcors.WithAllowMethods(""),
+			// rkmidcors.WithAllowMethods(""),
 		),
 	}
 

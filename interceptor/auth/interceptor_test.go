@@ -9,8 +9,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
-	rkcommon "github.com/rookie-ninja/rk-common/common"
+	"github.com/rookie-ninja/rk-common/common"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidauth "github.com/rookie-ninja/rk-entry/middleware/auth"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -24,14 +27,14 @@ func TestInterceptor(t *testing.T) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}
 	inter := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"),
-		WithApiKeyAuth("ut-api-key"),
-		WithIgnorePrefix("ut"))
+		rkmidauth.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidauth.WithBasicAuth("ut-realm", "user:pass"),
+		rkmidauth.WithApiKeyAuth("ut-api-key"),
+		rkmidauth.WithIgnorePrefix("/ut"))
 	server := startServer(t, handler, inter)
 
 	client := getClient()
-	client.SetHeader(rkgfinter.RpcAuthorizationHeaderKey, "invalid")
+	client.SetHeader(rkmid.HeaderAuthorization, "invalid")
 	resp, err := client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -42,13 +45,13 @@ func TestInterceptor(t *testing.T) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}
 	inter = Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"),
-		WithApiKeyAuth("ut-api-key"))
+		rkmidauth.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidauth.WithBasicAuth("ut-realm", "user:pass"),
+		rkmidauth.WithApiKeyAuth("ut-api-key"))
 	server = startServer(t, handler, inter)
 
 	client = getClient()
-	client.SetHeader(rkgfinter.RpcAuthorizationHeaderKey, "invalid")
+	client.SetHeader(rkmid.HeaderAuthorization, "invalid")
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -59,13 +62,13 @@ func TestInterceptor(t *testing.T) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}
 	inter = Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"),
-		WithApiKeyAuth("ut-api-key"))
+		rkmidauth.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidauth.WithBasicAuth("ut-realm", "user:pass"),
+		rkmidauth.WithApiKeyAuth("ut-api-key"))
 	server = startServer(t, handler, inter)
 
 	client = getClient()
-	client.SetHeader(rkgfinter.RpcAuthorizationHeaderKey, fmt.Sprintf("%s invalid", typeBasic))
+	client.SetHeader(rkmid.HeaderAuthorization, fmt.Sprintf("%s invalid", "Basic"))
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -76,13 +79,13 @@ func TestInterceptor(t *testing.T) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}
 	inter = Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"),
-		WithApiKeyAuth("ut-api-key"))
+		rkmidauth.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidauth.WithBasicAuth("ut-realm", "user:pass"),
+		rkmidauth.WithApiKeyAuth("ut-api-key"))
 	server = startServer(t, handler, inter)
 
 	client = getClient()
-	client.SetHeader(rkgfinter.RpcApiKeyHeaderKey, "invalid")
+	client.SetHeader(rkmid.HeaderApiKey, "invalid")
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -93,9 +96,9 @@ func TestInterceptor(t *testing.T) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}
 	inter = Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"),
-		WithApiKeyAuth("ut-api-key"))
+		rkmidauth.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidauth.WithBasicAuth("ut-realm", "user:pass"),
+		rkmidauth.WithApiKeyAuth("ut-api-key"))
 	server = startServer(t, handler, inter)
 
 	client = getClient()
@@ -117,7 +120,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

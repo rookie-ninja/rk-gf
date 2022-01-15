@@ -43,14 +43,14 @@ import     "github.com/rookie-ninja/rk-gf/interceptor/cors"
 
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkgfcors.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple CORS interceptors needs to be used. | gin, gin |
-| rkgfcors.WithSkipper(func) | Provide skipper function | Function always return false. |
-| rkgfcors.WithAllowOrigins(string...) | Provide allowed origins with wildcard enabled | * |
-| rkgfcors.WithAllowMethods(string...) | Provide allowed methods returns as response header of OPTIONS request | All http methods |
-| rkgfcors.WithAllowHeaders(string...) | Provide allowed headers returns as response header of OPTIONS request | Headers from request |
-| rkgfcors.WithAllowCredentials(bool) | Returns as response header of OPTIONS request | false |
-| rkgfcors.WithExposeHeaders(string...) | Provide exposed headers returns as response header of OPTIONS request | "" |
-| rkgfcors.WithMaxAge(int) | Provide max age returns as response header of OPTIONS request | 0 |
+| rkmidcors.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple CORS interceptors needs to be used. | gin, gin |
+| rkmidcors.WithIgnorePrefix(string...) | Provide path to ignore | [] |
+| rkmidcors.WithAllowOrigins(string...) | Provide allowed origins with wildcard enabled | * |
+| rkmidcors.WithAllowMethods(string...) | Provide allowed methods returns as response header of OPTIONS request | All http methods |
+| rkmidcors.WithAllowHeaders(string...) | Provide allowed headers returns as response header of OPTIONS request | Headers from request |
+| rkmidcors.WithAllowCredentials(bool) | Returns as response header of OPTIONS request | false |
+| rkmidcors.WithExposeHeaders(string...) | Provide exposed headers returns as response header of OPTIONS request | "" |
+| rkmidcors.WithMaxAge(int) | Provide max age returns as response header of OPTIONS request | 0 |
 
 ## Example
 ### With accept CORS for all domains
@@ -104,7 +104,7 @@ In this example, we will enable CORS middleware with rkgfcors.WithAllowOrigins("
 			// Bellow section is for CORS policy.
 			// Please refer https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS for details.
 			// Provide allowed origins
-			rkgfcors.WithAllowOrigins("http://localhost:8080"),
+			rkmidcors.WithAllowOrigins("http://localhost:8080"),
         ),
 	}
 ```
@@ -125,7 +125,7 @@ In this example, we will enable CORS middleware with rkgfcors.WithAllowOrigins("
 			// Bellow section is for CORS policy.
 			// Please refer https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS for details.
 			// Provide allowed origins
-			rkgfcors.WithAllowOrigins("http://localhost:*"),
+			rkmidcors   .WithAllowOrigins("http://localhost:*"),
         ),
 	}
 ```

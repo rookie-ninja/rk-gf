@@ -8,29 +8,23 @@ package rkgflimit
 
 import (
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/rookie-ninja/rk-common/error"
-	"github.com/rookie-ninja/rk-gf/interceptor"
-	"github.com/rookie-ninja/rk-gf/interceptor/context"
-	"net/http"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidlimit "github.com/rookie-ninja/rk-entry/middleware/ratelimit"
 )
 
 // Interceptor Add rate limit interceptors.
-func Interceptor(opts ...Option) ghttp.HandlerFunc {
-	set := newOptionSet(opts...)
+func Interceptor(opts ...rkmidlimit.Option) ghttp.HandlerFunc {
+	set := rkmidlimit.NewOptionSet(opts...)
 
 	return func(ctx *ghttp.Request) {
-		ctx.SetCtxVar(rkgfinter.RpcEntryNameKey, set.EntryName)
+		ctx.SetCtxVar(rkmid.EntryNameKey, set.GetEntryName())
 
-		event := rkgfctx.GetEvent(ctx)
+		beforeCtx := set.BeforeCtx(ctx.Request)
+		set.Before(beforeCtx)
 
-		if duration, err := set.Wait(ctx); err != nil {
-			event.SetCounter("rateLimitWaitMs", duration.Milliseconds())
-			event.AddErr(err)
-
-			ctx.Response.WriteHeader(http.StatusTooManyRequests)
-			ctx.Response.Write(rkerror.New(
-				rkerror.WithHttpCode(http.StatusTooManyRequests),
-				rkerror.WithDetails(err)))
+		if beforeCtx.Output.ErrResp != nil {
+			ctx.Response.WriteHeader(beforeCtx.Output.ErrResp.Err.Code)
+			ctx.Response.WriteJson(beforeCtx.Output.ErrResp)
 			return
 		}
 

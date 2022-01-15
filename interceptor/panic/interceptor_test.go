@@ -9,8 +9,10 @@ import (
 	"context"
 	"errors"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	rkcommon "github.com/rookie-ninja/rk-common/common"
+	rkmidpanic "github.com/rookie-ninja/rk-entry/middleware/panic"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -25,7 +27,7 @@ func TestInterceptor(t *testing.T) {
 	handler := func(ctx *ghttp.Request) {
 		panic(errors.New("error"))
 	}
-	inter := Interceptor(WithEntryNameAndType("ut-entry", "ut-type"))
+	inter := Interceptor(rkmidpanic.WithEntryNameAndType("ut-entry", "ut-type"))
 	server := startServer(t, handler, inter)
 
 	client := getClient()
@@ -38,7 +40,7 @@ func TestInterceptor(t *testing.T) {
 	handler = func(ctx *ghttp.Request) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}
-	inter = Interceptor(WithEntryNameAndType("ut-entry", "ut-type"))
+	inter = Interceptor(rkmidpanic.WithEntryNameAndType("ut-entry", "ut-type"))
 	server = startServer(t, handler, inter)
 
 	client = getClient()
@@ -60,7 +62,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

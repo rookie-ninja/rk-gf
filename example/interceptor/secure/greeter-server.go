@@ -10,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidsec "github.com/rookie-ninja/rk-entry/middleware/secure"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
 	rkgfsec "github.com/rookie-ninja/rk-gf/interceptor/secure"
@@ -33,43 +34,43 @@ func main() {
 	interceptors := []ghttp.HandlerFunc{
 		rkgfsec.Interceptor(
 			// Required, entry name and entry type will be used for distinguishing interceptors. Recommended.
-			rkgfsec.WithEntryNameAndType("greeter", "gf"),
+			rkmidsec.WithEntryNameAndType("greeter", "gf"),
 			//
 			// X-XSS-Protection header value.
 			// Optional. Default value "1; mode=block".
-			//rkgfsec.WithXSSProtection("my-value"),
+			//rkmidsec.WithXSSProtection("my-value"),
 			//
 			// X-Content-Type-Options header value.
 			// Optional. Default value "nosniff".
-			//rkgfsec.WithContentTypeNosniff("my-value"),
+			//rkmidsec.WithContentTypeNosniff("my-value"),
 			//
 			// X-Frame-Options header value.
 			// Optional. Default value "SAMEORIGIN".
-			//rkgfsec.WithXFrameOptions("my-value"),
+			//rkmidsec.WithXFrameOptions("my-value"),
 			//
 			// Optional, Strict-Transport-Security header value.
-			//rkgfsec.WithHSTSMaxAge(1),
+			//rkmidsec.WithHSTSMaxAge(1),
 			//
 			// Optional, excluding subdomains of HSTS, default is false
-			//rkgfsec.WithHSTSExcludeSubdomains(true),
+			//rkmidsec.WithHSTSExcludeSubdomains(true),
 			//
 			// Optional, enabling HSTS preload, default is false
-			//rkgfsec.WithHSTSPreloadEnabled(true),
+			//rkmidsec.WithHSTSPreloadEnabled(true),
 			//
 			// Content-Security-Policy header value.
 			// Optional. Default value "".
-			//rkgfsec.WithContentSecurityPolicy("my-value"),
+			//rkmidsec.WithContentSecurityPolicy("my-value"),
 			//
 			// Content-Security-Policy-Report-Only header value.
 			// Optional. Default value false.
-			//rkgfsec.WithCSPReportOnly(true),
+			//rkmidsec.WithCSPReportOnly(true),
 			//
 			// Referrer-Policy header value.
 			// Optional. Default value "".
-			//rkgfsec.WithReferrerPolicy("my-value"),
+			//rkmidsec.WithReferrerPolicy("my-value"),
 			//
 			// Ignoring path prefix.
-			//rkgfsec.WithIgnorePrefix("/rk/v1"),
+			//rkmidsec.WithIgnorePrefix("/rk/v1"),
 		),
 	}
 

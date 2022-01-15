@@ -11,6 +11,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidjwt "github.com/rookie-ninja/rk-entry/middleware/jwt"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
 	rkgfjwt "github.com/rookie-ninja/rk-gf/interceptor/jwt"
@@ -35,34 +36,36 @@ func main() {
 		//rkgflog.Interceptor(),
 		rkgfjwt.Interceptor(
 			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			// rkgfjwt.WithEntryNameAndType("greeter", "gf"),
+			// rkginjwt.WithEntryNameAndType("greeter", "gin"),
 			//
 			// Required, provide signing key.
-			rkgfjwt.WithSigningKey([]byte("my-secret")),
+			rkmidjwt.WithSigningKey([]byte("my-secret")),
+			//
+			// rkmidjwt.WithIgnorePrefix(""),
 			//
 			// Optional, provide skipper function
-			//rkgfjwt.WithSkipper(func(e *ghttp.Request) bool {
+			//rkmidjwt.WithSkipper(func(e *gin.Context) bool {
 			//	return true
 			//}),
 			//
 			// Optional, provide token parse function, default one will be assigned.
-			//rkgfjwt.WithParseTokenFunc(func(auth string, ctx *ghttp.Request) (*jwt.Token, error) {
+			//rkmidjwt.WithParseTokenFunc(func(auth string, ctx *gin.Context) (*jwt.Token, error) {
 			//	return nil, nil
 			//}),
 			//
 			// Optional, provide key function, default one will be assigned.
-			//rkgfjwt.WithKeyFunc(func(token *jwt.Token) (interface{}, error) {
+			//rkmidjwt.WithKeyFunc(func(token *jwt.Token) (interface{}, error) {
 			//	return nil, nil
 			//}),
 			//
 			// Optional, default is Bearer
-			//rkgfjwt.WithAuthScheme("Bearer"),
+			//rkmidjwt.WithAuthScheme("Bearer"),
 			//
 			// Optional
-			//rkgfjwt.WithTokenLookup("header:my-jwt-header-key"),
+			//rkmidjwt.WithTokenLookup("header:my-jwt-header-key"),
 			//
 			// Optional, default is HS256
-			//rkgfjwt.WithSigningAlgorithm(rkgfjwt.AlgorithmHS256),
+			//rkmidjwt.WithSigningAlgorithm(rkginjwt.AlgorithmHS256),
 		),
 	}
 

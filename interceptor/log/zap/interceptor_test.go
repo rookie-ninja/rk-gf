@@ -8,9 +8,11 @@ package rkgflog
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	rkcommon "github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidlog "github.com/rookie-ninja/rk-entry/middleware/log"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
 	"github.com/stretchr/testify/assert"
@@ -27,9 +29,9 @@ func TestInterceptor_WithShouldNotLog(t *testing.T) {
 	defer assertNotPanic(t)
 
 	inter := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithZapLoggerEntry(rkentry.NoopZapLoggerEntry()),
-		WithEventLoggerEntry(rkentry.NoopEventLoggerEntry()))
+		rkmidlog.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidlog.WithZapLoggerEntry(rkentry.NoopZapLoggerEntry()),
+		rkmidlog.WithEventLoggerEntry(rkentry.NoopEventLoggerEntry()))
 	server := startServer(t, userHandler, inter)
 
 	client := getClient()
@@ -44,9 +46,9 @@ func TestInterceptor_HappyCase(t *testing.T) {
 	defer assertNotPanic(t)
 
 	inter := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithZapLoggerEntry(rkentry.NoopZapLoggerEntry()),
-		WithEventLoggerEntry(rkentry.NoopEventLoggerEntry()))
+		rkmidlog.WithEntryNameAndType("ut-entry", "ut-type"),
+		rkmidlog.WithZapLoggerEntry(rkentry.NoopZapLoggerEntry()),
+		rkmidlog.WithEventLoggerEntry(rkentry.NoopEventLoggerEntry()))
 	server := startServer(t, func(ctx *ghttp.Request) {
 		event := rkgfctx.GetEvent(ctx)
 		assert.NotNil(t, event)
@@ -73,7 +75,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

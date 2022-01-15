@@ -10,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidauth "github.com/rookie-ninja/rk-entry/middleware/auth"
 	rkgfinter "github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/auth"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
@@ -27,9 +28,9 @@ func main() {
 	interceptors := []ghttp.HandlerFunc{
 		rkgflog.Interceptor(),
 		rkgfauth.Interceptor(
-			// rkgfauth.WithIgnorePrefix("/rk/v1/greeter"),
-			rkgfauth.WithBasicAuth("", "rk-user:rk-pass"),
-			rkgfauth.WithApiKeyAuth("rk-api-key"),
+			// rkmidauth.WithIgnorePrefix("/rk/v1/greeter"),
+			rkmidauth.WithBasicAuth("", "rk-user:rk-pass"),
+			rkmidauth.WithApiKeyAuth("rk-api-key"),
 		),
 	}
 

@@ -8,8 +8,10 @@ package rkgfmeta
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	rkcommon "github.com/rookie-ninja/rk-common/common"
+	rkmidmeta "github.com/rookie-ninja/rk-entry/middleware/meta"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -20,7 +22,7 @@ import (
 func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	inter := Interceptor(WithEntryNameAndType("ut-entry", "ut-type"))
+	inter := Interceptor(rkmidmeta.WithEntryNameAndType("ut-entry", "ut-type"))
 	server := startServer(t, func(ctx *ghttp.Request) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}, inter)
@@ -49,7 +51,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

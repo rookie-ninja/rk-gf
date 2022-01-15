@@ -30,12 +30,12 @@ func main() {
 	// ********************************************
 	interceptors := []ghttp.HandlerFunc{
 		rkgfmetrics.Interceptor(
-			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			rkgfmetrics.WithEntryNameAndType("greeter", "gf"),
-			//
-			// Provide new prometheus registerer.
-			// Default value is prometheus.DefaultRegisterer
-			//rkgfmetrics.WithRegisterer(prometheus.NewRegistry()),
+		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
+		// rkmidmetrics.WithEntryNameAndType("greeter", "gf"),
+		//
+		// Provide new prometheus registerer.
+		// Default value is prometheus.DefaultRegisterer
+		// rkmidmetrics.WithRegisterer(prometheus.NewRegistry()),
 		),
 	}
 

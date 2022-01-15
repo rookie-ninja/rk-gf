@@ -7,40 +7,29 @@
 package rkgfpanic
 
 import (
-	"fmt"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/rookie-ninja/rk-common/error"
-	"github.com/rookie-ninja/rk-gf/interceptor"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidpanic "github.com/rookie-ninja/rk-entry/middleware/panic"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
-	"go.uber.org/zap"
-	"net/http"
 )
 
 // Interceptor returns a ghttp.HandlerFunc (middleware)
-func Interceptor(opts ...Option) ghttp.HandlerFunc {
-	set := newOptionSet(opts...)
+func Interceptor(opts ...rkmidpanic.Option) ghttp.HandlerFunc {
+	set := rkmidpanic.NewOptionSet(opts...)
 
 	return func(ctx *ghttp.Request) {
-		ctx.SetCtxVar(rkgfinter.RpcEntryNameKey, set.EntryName)
+		ctx.SetCtxVar(rkmid.EntryNameKey, set.GetEntryName())
 
-		defer func() {
-			if err := ctx.GetError(); err != nil {
-				var res *rkerror.ErrorResp
-				if re, ok := err.(error); ok {
-					res = rkerror.FromError(re)
-				} else {
-					res = rkerror.New(rkerror.WithMessage(fmt.Sprintf("%v", err)))
-				}
+		handlerFunc := func(resp *rkerror.ErrorResp) {
+			ctx.Response.ClearBuffer()
+			ctx.Response.WriteHeader(resp.Err.Code)
+			ctx.Response.WriteJson(resp)
+		}
+		beforeCtx := set.BeforeCtx(rkgfctx.GetEvent(ctx), rkgfctx.GetLogger(ctx), handlerFunc)
+		set.Before(beforeCtx)
 
-				rkgfctx.GetEvent(ctx).SetCounter("panic", 1)
-				rkgfctx.GetEvent(ctx).AddErr(res.Err)
-				rkgfctx.GetLogger(ctx).Error(fmt.Sprintf("panic occurs:\n%+v", err), zap.Error(res.Err))
-
-				ctx.Response.ClearBuffer()
-				ctx.Response.WriteHeader(http.StatusInternalServerError)
-				ctx.Response.Write(res)
-			}
-		}()
+		defer beforeCtx.Output.DeferFunc()
 
 		ctx.Middleware.Next()
 	}

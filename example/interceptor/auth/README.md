@@ -43,9 +43,9 @@ import    "github.com/rookie-ninja/rk-gf/interceptor/auth"
     // ********************************************
 	interceptors := []ghttp.HandlerFunc{
 		rkgfauth.Interceptor(
-			rkgfauth.WithIgnorePrefix("/rk/v1/greeter"),
-			rkgfauth.WithBasicAuth("", "rk-user:rk-pass"),
-			rkgfauth.WithApiKeyAuth("rk-api-key"),
+			rkmidauth.WithIgnorePrefix("/rk/v1/greeter"),
+			rkmidauth.WithBasicAuth("", "rk-user:rk-pass"),
+			rkmidauth.WithApiKeyAuth("rk-api-key"),
 		),
 	}
 ```
@@ -57,10 +57,10 @@ Auth interceptor validate authorization for each request.
 
 | Name | Default | Description |
 | ---- | ---- | ---- |
-| WithEntryNameAndType(entryName, entryType string) | entryName=gf, entryType=gf | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
-| WithBasicAuth(realm string, cred ...string) | []string | Provide Basic auth credential with scheme of [user:pass]. Multiple credential are available for server. |
-| WithApiKeyAuth(key ...string) | []string | Provide API key. Multiple keys are available for server. |
-| WithIgnorePrefix(paths ...string) | []string | Ignoring paths that interceptors will ignore. |
+| rkmidauth.WithEntryNameAndType(entryName, entryType string) | entryName=gin, entryType=gin | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
+| rkmidauth.WithBasicAuth(realm string, cred ...string) | []string | Provide Basic auth credential with scheme of [user:pass]. Multiple credential are available for server. |
+| rkmidauth.WithApiKeyAuth(key ...string) | []string | Provide API key. Multiple keys are available for server. |
+| rkmidauth.WithIgnorePrefix(paths ...string) | []string | Ignoring paths that interceptors will ignore. |
 
 ```go
     // ********************************************
@@ -68,9 +68,9 @@ Auth interceptor validate authorization for each request.
     // ********************************************
 	interceptors := []ghttp.HandlerFunc{
 		rkgfauth.Interceptor(
-			rkgfauth.WithIgnorePrefix("/rk/v1/greeter"),
-			rkgfauth.WithBasicAuth("", "rk-user:rk-pass"),
-			rkgfauth.WithApiKeyAuth("rk-api-key"),
+			rkmidauth.WithIgnorePrefix("/rk/v1/greeter"),
+			rkmidauth.WithBasicAuth("", "rk-user:rk-pass"),
+			rkmidauth.WithApiKeyAuth("rk-api-key"),
 		),
 	}
 ```

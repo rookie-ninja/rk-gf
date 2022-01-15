@@ -10,7 +10,7 @@ import (
 	"context"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/rookie-ninja/rk-gf/interceptor"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
 	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
 	otelcodes "go.opentelemetry.io/otel/codes"
@@ -60,11 +60,7 @@ func SetHeaderToClient(ctx *ghttp.Request, key, value string) {
 
 // GetEvent extract takes the call-scoped EventData from middleware.
 func GetEvent(ctx *ghttp.Request) rkquery.Event {
-	if ctx == nil {
-		return noopEvent
-	}
-
-	if raw := ctx.GetCtxVar(rkgfinter.RpcEventKey).Interface(); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.EventKey).Interface(); raw != nil {
 		return raw.(rkquery.Event)
 	}
 
@@ -73,11 +69,7 @@ func GetEvent(ctx *ghttp.Request) rkquery.Event {
 
 // GetLogger extract takes the call-scoped zap logger from middleware.
 func GetLogger(ctx *ghttp.Request) *zap.Logger {
-	if ctx == nil {
-		return rklogger.NoopLogger
-	}
-
-	if raw := ctx.GetCtxVar(rkgfinter.RpcLoggerKey).Interface(); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.LoggerKey).Interface(); raw != nil {
 		requestId := GetRequestId(ctx)
 		traceId := GetTraceId(ctx)
 		fields := make([]zap.Field, 0)
@@ -120,7 +112,7 @@ func GetEntryName(ctx *ghttp.Request) string {
 		return ""
 	}
 
-	if raw := ctx.GetCtxVar(rkgfinter.RpcEntryNameKey).Interface(); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.EntryNameKey).Interface(); raw != nil {
 		return raw.(string)
 	}
 
@@ -137,7 +129,7 @@ func GetTraceSpan(ctx *ghttp.Request) trace.Span {
 
 	_, span = noopTracerProvider.Tracer("rk-trace-noop").Start(ctx.Request.Context(), "noop-span")
 
-	if raw := ctx.GetCtxVar(rkgfinter.RpcSpanKey).Interface(); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.SpanKey).Interface(); raw != nil {
 		return raw.(trace.Span)
 	}
 
@@ -150,7 +142,7 @@ func GetTracer(ctx *ghttp.Request) trace.Tracer {
 		return noopTracerProvider.Tracer("rk-trace-noop")
 	}
 
-	if raw := ctx.GetCtxVar(rkgfinter.RpcTracerKey).Interface(); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.TracerKey).Interface(); raw != nil {
 		return raw.(trace.Tracer)
 	}
 
@@ -163,7 +155,7 @@ func GetTracerProvider(ctx *ghttp.Request) trace.TracerProvider {
 		return noopTracerProvider
 	}
 
-	if raw := ctx.GetCtxVar(rkgfinter.RpcTracerProviderKey).Interface(); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.TracerProviderKey).Interface(); raw != nil {
 		return raw.(trace.TracerProvider)
 	}
 
@@ -176,7 +168,7 @@ func GetTracerPropagator(ctx *ghttp.Request) propagation.TextMapPropagator {
 		return nil
 	}
 
-	if raw := ctx.GetCtxVar(rkgfinter.RpcPropagatorKey).Interface(); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.PropagatorKey).Interface(); raw != nil {
 		return raw.(propagation.TextMapPropagator)
 	}
 
@@ -223,7 +215,7 @@ func GetJwtToken(ctx *ghttp.Request) *jwt.Token {
 		return nil
 	}
 
-	if raw := ctx.GetCtxVar(rkgfinter.RpcJwtTokenKey); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.JwtTokenKey); raw != nil {
 		if res, ok := raw.Interface().(*jwt.Token); ok {
 			return res
 		}
@@ -238,7 +230,7 @@ func GetCsrfToken(ctx *ghttp.Request) string {
 		return ""
 	}
 
-	if raw := ctx.GetCtxVar(rkgfinter.RpcCsrfTokenKey); raw != nil {
+	if raw := ctx.GetCtxVar(rkmid.CsrfTokenKey); raw != nil {
 		return raw.String()
 	}
 

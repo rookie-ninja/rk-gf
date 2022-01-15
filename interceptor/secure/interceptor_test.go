@@ -9,8 +9,11 @@ package rkgfsec
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/rookie-ninja/rk-common/common"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidsec "github.com/rookie-ninja/rk-entry/middleware/secure"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -19,59 +22,46 @@ import (
 )
 
 func TestInterceptor(t *testing.T) {
-	// with skipper
-	inter := Interceptor(
-		WithSkipper(func(ctx *ghttp.Request) bool {
-			return true
-		}))
+	// without options
+	inter := Interceptor()
 	server := startServer(t, userHandler, inter)
 
 	client := getClient()
 	resp, err := client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Nil(t, server.Shutdown())
-
-	// without options
-	inter = Interceptor()
-	server = startServer(t, userHandler, inter)
-
-	client = getClient()
-	resp, err = client.Get(context.TODO(), "/ut")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	containsHeader(t, resp.Header,
-		headerXXSSProtection,
-		headerXContentTypeOptions,
-		headerXFrameOptions)
+		rkmid.HeaderXXSSProtection,
+		rkmid.HeaderXContentTypeOptions,
+		rkmid.HeaderXFrameOptions)
 	assert.Nil(t, server.Shutdown())
 
 	// with options
 	inter = Interceptor(
-		WithXSSProtection("ut-xss"),
-		WithContentTypeNosniff("ut-sniff"),
-		WithXFrameOptions("ut-frame"),
-		WithHSTSMaxAge(10),
-		WithHSTSExcludeSubdomains(true),
-		WithHSTSPreloadEnabled(true),
-		WithContentSecurityPolicy("ut-policy"),
-		WithCSPReportOnly(true),
-		WithReferrerPolicy("ut-ref"),
-		WithIgnorePrefix("ut-prefix"))
+		rkmidsec.WithXSSProtection("ut-xss"),
+		rkmidsec.WithContentTypeNosniff("ut-sniff"),
+		rkmidsec.WithXFrameOptions("ut-frame"),
+		rkmidsec.WithHSTSMaxAge(10),
+		rkmidsec.WithHSTSExcludeSubdomains(true),
+		rkmidsec.WithHSTSPreloadEnabled(true),
+		rkmidsec.WithContentSecurityPolicy("ut-policy"),
+		rkmidsec.WithCSPReportOnly(true),
+		rkmidsec.WithReferrerPolicy("ut-ref"),
+		rkmidsec.WithIgnorePrefix("ut-prefix"))
 	server = startServer(t, userHandler, inter)
 
 	client = getClient()
-	client.SetHeader(headerXForwardedProto, "https")
+	client.SetHeader(rkmid.HeaderXForwardedProto, "https")
 	resp, err = client.Get(context.TODO(), "/ut")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	containsHeader(t, resp.Header,
-		headerXXSSProtection,
-		headerXContentTypeOptions,
-		headerXFrameOptions,
-		headerStrictTransportSecurity,
-		headerContentSecurityPolicyReportOnly,
-		headerReferrerPolicy)
+		rkmid.HeaderXXSSProtection,
+		rkmid.HeaderXContentTypeOptions,
+		rkmid.HeaderXFrameOptions,
+		rkmid.HeaderStrictTransportSecurity,
+		rkmid.HeaderContentSecurityPolicyReportOnly,
+		rkmid.HeaderReferrerPolicy)
 	assert.Nil(t, server.Shutdown())
 
 }
@@ -98,7 +88,7 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)

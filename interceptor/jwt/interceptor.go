@@ -8,58 +8,29 @@ package rkgfjwt
 
 import (
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/rookie-ninja/rk-common/error"
-	"github.com/rookie-ninja/rk-gf/interceptor"
-	"net/http"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidjwt "github.com/rookie-ninja/rk-entry/middleware/jwt"
 )
 
 // Interceptor Add CORS interceptors.
-func Interceptor(opts ...Option) ghttp.HandlerFunc {
-	set := newOptionSet(opts...)
+func Interceptor(opts ...rkmidjwt.Option) ghttp.HandlerFunc {
+	set := rkmidjwt.NewOptionSet(opts...)
 
 	return func(ctx *ghttp.Request) {
-		ctx.SetCtxVar(rkgfinter.RpcEntryNameKey, set.EntryName)
+		ctx.SetCtxVar(rkmid.EntryNameKey, set.GetEntryName())
 
-		if set.Skipper(ctx) {
-			ctx.Middleware.Next()
-			return
-		}
+		beforeCtx := set.BeforeCtx(ctx.Request, nil)
+		set.Before(beforeCtx)
 
-		// extract token from extractor
-		var auth string
-		var err error
-		for _, extractor := range set.extractors {
-			// Extract token from extractor, if it's not fail break the loop and
-			// set auth
-			auth, err = extractor(ctx)
-			if err == nil {
-				break
-			}
-		}
-
-		if err != nil {
-			ctx.Response.WriteHeader(http.StatusUnauthorized)
-			ctx.Response.Write(rkerror.New(
-				rkerror.WithHttpCode(http.StatusUnauthorized),
-				rkerror.WithMessage("invalid or expired jwt"),
-				rkerror.WithDetails(err)))
-			return
-		}
-
-		// parse token
-		token, err := set.ParseTokenFunc(auth, ctx)
-
-		if err != nil {
-			ctx.Response.WriteHeader(http.StatusUnauthorized)
-			ctx.Response.Write(rkerror.New(
-				rkerror.WithHttpCode(http.StatusUnauthorized),
-				rkerror.WithMessage("invalid or expired jwt"),
-				rkerror.WithDetails(err)))
+		// case 1: error response
+		if beforeCtx.Output.ErrResp != nil {
+			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Err.Code)
+			ctx.Response.WriteJson(beforeCtx.Output.ErrResp)
 			return
 		}
 
 		// insert into context
-		ctx.SetCtxVar(rkgfinter.RpcJwtTokenKey, token)
+		ctx.SetCtxVar(rkmid.JwtTokenKey, beforeCtx.Output.JwtToken)
 
 		ctx.Middleware.Next()
 	}

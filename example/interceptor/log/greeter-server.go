@@ -11,6 +11,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidlog "github.com/rookie-ninja/rk-entry/middleware/log"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
 	"github.com/rookie-ninja/rk-gf/interceptor/log/zap"
@@ -28,19 +29,19 @@ func main() {
 		//rkgfmeta.Interceptor(),
 		rkgflog.Interceptor(
 			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			// rkgflog.WithEntryNameAndType("greeter", "gf"),
+			rkmidlog.WithEntryNameAndType("greeter", "gin"),
 			//
 			// Zap logger would be logged as JSON format.
-			//rkgflog.WithZapLoggerEncoding(rkgflog.ENCODING_JSON),
+			// rkmidlog.WithZapLoggerEncoding("json"),
 			//
 			// Event logger would be logged as JSON format.
-			//rkgflog.WithEventLoggerEncoding(rkgflog.ENCODING_JSON),
+			// rkmidlog.WithEventLoggerEncoding("json"),
 			//
 			// Zap logger would be logged to specified path.
-			rkgflog.WithZapLoggerOutputPaths("logs/server-zap.log"),
+			// rkmidlog.WithZapLoggerOutputPaths("logs/server-zap.log"),
 			//
 			// Event logger would be logged to specified path.
-			rkgflog.WithEventLoggerOutputPaths("logs/server-event.log"),
+			// rkmidlog.WithEventLoggerOutputPaths("logs/server-event.log"),
 		),
 	}
 

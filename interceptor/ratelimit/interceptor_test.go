@@ -9,8 +9,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/gclient"
 	"github.com/gogf/gf/v2/net/ghttp"
 	rkcommon "github.com/rookie-ninja/rk-common/common"
+	rkmidlimit "github.com/rookie-ninja/rk-entry/middleware/ratelimit"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -37,9 +39,9 @@ func TestInterceptor_WithTokenBucket(t *testing.T) {
 	defer assertNotPanic(t)
 
 	inter := Interceptor(
-		WithAlgorithm(TokenBucket),
-		WithReqPerSec(1),
-		WithReqPerSecByPath("ut-path", 1))
+		rkmidlimit.WithAlgorithm(rkmidlimit.TokenBucket),
+		rkmidlimit.WithReqPerSec(1),
+		rkmidlimit.WithReqPerSecByPath("ut-path", 1))
 	server := startServer(t, func(ctx *ghttp.Request) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}, inter)
@@ -55,9 +57,9 @@ func TestInterceptor_WithLeakyBucket(t *testing.T) {
 	defer assertNotPanic(t)
 
 	inter := Interceptor(
-		WithAlgorithm(LeakyBucket),
-		WithReqPerSec(1),
-		WithReqPerSecByPath("ut-path", 1))
+		rkmidlimit.WithAlgorithm(rkmidlimit.LeakyBucket),
+		rkmidlimit.WithReqPerSec(1),
+		rkmidlimit.WithReqPerSecByPath("ut-path", 1))
 	server := startServer(t, func(ctx *ghttp.Request) {
 		ctx.Response.WriteHeader(http.StatusOK)
 	}, inter)
@@ -73,10 +75,10 @@ func TestInterceptor_WithUserLimiter(t *testing.T) {
 	defer assertNotPanic(t)
 
 	inter := Interceptor(
-		WithGlobalLimiter(func(ctx *ghttp.Request) error {
+		rkmidlimit.WithGlobalLimiter(func() error {
 			return fmt.Errorf("ut-error")
 		}),
-		WithLimiterByPath("/ut-path", func(ctx *ghttp.Request) error {
+		rkmidlimit.WithLimiterByPath("/ut-path", func() error {
 			return fmt.Errorf("ut-error")
 		}))
 	server := startServer(t, func(ctx *ghttp.Request) {
@@ -102,11 +104,21 @@ func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.H
 	return server
 }
 
-func getClient() *ghttp.Client {
+func getClient() *gclient.Client {
 	time.Sleep(100 * time.Millisecond)
 	client := g.Client()
 	client.SetBrowserMode(true)
 	client.SetPrefix("http://127.0.0.1:8080")
 
 	return client
+}
+
+func assertNotPanic(t *testing.T) {
+	if r := recover(); r != nil {
+		// Expect panic to be called with non nil error
+		assert.True(t, false)
+	} else {
+		// This should never be called in case of a bug
+		assert.True(t, true)
+	}
 }

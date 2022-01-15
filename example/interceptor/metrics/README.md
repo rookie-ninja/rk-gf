@@ -49,8 +49,8 @@ In order to define prometheus style metrics, we need to define <namespace> and <
 
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkgfmetrics.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple extension interceptors needs to be used. | rk, gf |
-| rkgfmetrics.WithRegisterer(registerer prometheus.Registerer) | Provide prometheus registerer. | prometheus.DefaultRegisterer |
+| rkmidmetrics.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple extension interceptors needs to be used. | gin, gin |
+| rkmidmetrics.WithRegisterer(registerer prometheus.Registerer) | Provide prometheus registerer. | prometheus.DefaultRegisterer |
 
 ![arch](img/arch.png)
 
@@ -67,7 +67,7 @@ func main() {
         rkgfmetrics.Interceptor(
             // Add metrics interceptor with entry name and entry type.
             // subsystem would be replaced with newEntry.
-            rkgfmetrics.Interceptor(rkgfmetrics.WithEntryNameAndType("newEntry", "gf")),
+            rkmidmetrics.Interceptor(rkginmetrics.WithEntryNameAndType("newEntry", "gf")),
         ),
     }
 
@@ -83,7 +83,7 @@ func main() {
         rkgfmetrics.Interceptor(
             // Provide new prometheus registerer.
             // Default value is prometheus.DefaultRegisterer
-            rkgfmetrics.WithRegisterer(prometheus.NewRegistry()),
+            rkmidmetrics.WithRegisterer(prometheus.NewRegistry()),
         ),
     }
 ```

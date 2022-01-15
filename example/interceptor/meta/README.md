@@ -63,8 +63,8 @@ Meta interceptor is only available on server side. The interceptor will send bel
 
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkgfmeta.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple meta interceptors needs to be used. | gf, gf |
-| rkgfmeta.WithPrefix(prefix string) | Provide prefix of meta header | RK |
+| rkmidmeta.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple meta interceptors needs to be used. | gin, gin |
+| rkmidmeta.WithPrefix(prefix string) | Provide prefix of meta header | RK |
 
 ```go
     // ********************************************
@@ -73,10 +73,10 @@ Meta interceptor is only available on server side. The interceptor will send bel
 	interceptors := []ghttp.HandlerFunc{
         rkgfmeta.Interceptor(
             // Entry name and entry type will be used for distinguishing interceptors. Recommended.
-            // rkgfmeta.WithEntryNameAndType("greeter", "gf"),
+            // rkmidmeta.WithEntryNameAndType("greeter", "gin"),
             //
             // We will replace X-<Prefix>-XXX with prefix user provided.
-            // rkgfmeta.WithPrefix("Dog"),
+            // rkmidmeta.WithPrefix("Dog"),
         ),
     }
 ```

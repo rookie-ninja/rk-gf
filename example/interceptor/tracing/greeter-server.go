@@ -10,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidtrace "github.com/rookie-ninja/rk-entry/middleware/tracing"
 	"github.com/rookie-ninja/rk-gf/interceptor"
 	"github.com/rookie-ninja/rk-gf/interceptor/context"
 	"github.com/rookie-ninja/rk-gf/interceptor/log/zap"
@@ -26,13 +27,13 @@ func main() {
 	// ****************************************
 
 	// Export trace to stdout
-	exporter := rkgftrace.CreateFileExporter("stdout")
+	exporter := rkmidtrace.NewFileExporter("stdout")
 
 	// Export trace to local file system
-	//exporter := rkgftrace.CreateFileExporter("logs/trace.log")
+	// exporter := rkmidtrace.NewFileExporter("logs/trace.log")
 
 	// Export trace to jaeger agent
-	//exporter := rkgftrace.CreateJaegerExporter(jaeger.WithAgentEndpoint())
+	// exporter := rkmidtrace.NewJaegerExporter(jaeger.WithAgentEndpoint())
 
 	// ********************************************
 	// ********** Enable interceptors *************
@@ -41,19 +42,19 @@ func main() {
 		rkgflog.Interceptor(),
 		rkgftrace.Interceptor(
 			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			//rkgftrace.WithEntryNameAndType("greeter", "gf"),
+			// rkmidtrace.WithEntryNameAndType("greeter", "gin"),
 			//
 			// Provide an exporter.
-			rkgftrace.WithExporter(exporter),
+			rkmidtrace.WithExporter(exporter),
 			//
 			// Provide propagation.TextMapPropagator
-			// rkgftrace.WithPropagator(<propagator>),
+			// rkmidtrace.WithPropagator(<propagator>),
 			//
 			// Provide SpanProcessor
-			// rkgftrace.WithSpanProcessor(<span processor>),
+			// rkmidtrace.WithSpanProcessor(<span processor>),
 			//
 			// Provide TracerProvider
-			// rkgftrace.WithTracerProvider(<trace provider>),
+			// rkmidtrace.WithTracerProvider(<trace provider>),
 		),
 	}
 

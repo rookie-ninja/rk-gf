@@ -8,34 +8,24 @@ package rkgfmetrics
 
 import (
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/rookie-ninja/rk-gf/interceptor"
-	"time"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidmetrics "github.com/rookie-ninja/rk-entry/middleware/metrics"
+	"strconv"
 )
 
 // Interceptor create a new prometheus metrics interceptor with options.
-func Interceptor(opts ...Option) ghttp.HandlerFunc {
-	set := newOptionSet(opts...)
+func Interceptor(opts ...rkmidmetrics.Option) ghttp.HandlerFunc {
+	set := rkmidmetrics.NewOptionSet(opts...)
 
 	return func(ctx *ghttp.Request) {
-		ctx.SetCtxVar(rkgfinter.RpcEntryNameKey, set.EntryName)
+		ctx.SetCtxVar(rkmid.EntryNameKey, set.GetEntryName())
 
-		// start timer
-		startTime := time.Now()
+		beforeCtx := set.BeforeCtx(ctx.Request)
+		set.Before(beforeCtx)
 
 		ctx.Middleware.Next()
 
-		// end timer
-		elapsed := time.Now().Sub(startTime)
-
-		// ignoring /rk/v1/assets, /rk/v1/tv and /sw/ path while logging since these are internal APIs.
-		if rkgfinter.ShouldLog(ctx) {
-			if durationMetrics := GetServerDurationMetrics(ctx); durationMetrics != nil {
-				durationMetrics.Observe(float64(elapsed.Nanoseconds()))
-			}
-
-			if resCodeMetrics := GetServerResCodeMetrics(ctx); resCodeMetrics != nil {
-				resCodeMetrics.Inc()
-			}
-		}
+		afterCtx := set.AfterCtx(strconv.Itoa(ctx.Response.Status))
+		set.After(beforeCtx, afterCtx)
 	}
 }
