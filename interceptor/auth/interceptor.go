@@ -32,8 +32,7 @@ func Interceptor(opts ...rkmidauth.Option) ghttp.HandlerFunc {
 			for k, v := range beforeCtx.Output.HeadersToReturn {
 				ctx.Response.Header().Set(k, v)
 			}
-			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Err.Code)
-			ctx.Response.WriteJson(beforeCtx.Output.ErrResp)
+			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Err.Code, beforeCtx.Output.ErrResp)
 			return
 		}
 

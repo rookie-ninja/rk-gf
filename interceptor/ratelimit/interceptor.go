@@ -23,8 +23,7 @@ func Interceptor(opts ...rkmidlimit.Option) ghttp.HandlerFunc {
 		set.Before(beforeCtx)
 
 		if beforeCtx.Output.ErrResp != nil {
-			ctx.Response.WriteHeader(beforeCtx.Output.ErrResp.Err.Code)
-			ctx.Response.WriteJson(beforeCtx.Output.ErrResp)
+			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Err.Code, beforeCtx.Output.ErrResp)
 			return
 		}
 

@@ -23,8 +23,7 @@ func Interceptor(opts ...rkmidpanic.Option) ghttp.HandlerFunc {
 
 		handlerFunc := func(resp *rkerror.ErrorResp) {
 			ctx.Response.ClearBuffer()
-			ctx.Response.WriteHeader(resp.Err.Code)
-			ctx.Response.WriteJson(resp)
+			ctx.Response.WriteStatus(resp.Err.Code, resp)
 		}
 		beforeCtx := set.BeforeCtx(rkgfctx.GetEvent(ctx), rkgfctx.GetLogger(ctx), handlerFunc)
 		set.Before(beforeCtx)
