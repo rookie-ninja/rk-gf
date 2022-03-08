@@ -6,16 +6,20 @@ package main
 
 import (
 	"context"
-	"github.com/rookie-ninja/rk-entry/entry"
+	_ "embed"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
 	"github.com/rookie-ninja/rk-gf/boot"
 )
 
-func main() {
-	// Bootstrap basic entries from boot config.
-	rkentry.RegisterInternalEntriesFromConfig("example/boot/full/boot.yaml")
+//go:embed boot.yaml
+var boot []byte
 
-	// Bootstrap echo entry from boot config
-	res := rkgf.RegisterGfEntriesWithConfig("example/boot/full/boot.yaml")
+func main() {
+	// Bootstrap preload entries
+	rkentry.BootstrapPreloadEntryYAML(boot)
+
+	// Bootstrap gin entry from boot config
+	res := rkgf.RegisterGfEntryYAML(boot)
 
 	// Bootstrap echo entry
 	res["greeter"].Bootstrap(context.Background())

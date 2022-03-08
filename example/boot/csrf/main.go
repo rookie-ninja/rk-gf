@@ -6,20 +6,24 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/rookie-ninja/rk-entry/entry"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
 	"github.com/rookie-ninja/rk-gf/boot"
-	"github.com/rookie-ninja/rk-gf/interceptor/context"
+	"github.com/rookie-ninja/rk-gf/middleware/context"
 	"net/http"
 )
 
-func main() {
-	// Bootstrap basic entries from boot config.
-	rkentry.RegisterInternalEntriesFromConfig("example/boot/csrf/boot.yaml")
+//go:embed boot.yaml
+var boot []byte
 
-	// Bootstrap gf entry from boot config
-	res := rkgf.RegisterGfEntriesWithConfig("example/boot/csrf/boot.yaml")
+func main() {
+	// Bootstrap preload entries
+	rkentry.BootstrapPreloadEntryYAML(boot)
+
+	// Bootstrap gin entry from boot config
+	res := rkgf.RegisterGfEntryYAML(boot)
 
 	entry := res["greeter"].(*rkgf.GfEntry)
 	entry.Server.BindHandler("/rk/v1/greeter", Greeter)

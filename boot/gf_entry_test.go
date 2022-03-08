@@ -13,22 +13,13 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/gclient"
-	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rookie-ninja/rk-entry/entry"
-	rkmidmetrics "github.com/rookie-ninja/rk-entry/middleware/metrics"
-	rkgfmeta "github.com/rookie-ninja/rk-gf/interceptor/meta"
-	rkgfmetrics "github.com/rookie-ninja/rk-gf/interceptor/metrics/prom"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
+	"github.com/rookie-ninja/rk-gf/middleware/meta"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"math/big"
 	"net"
-	"net/http"
-	"os"
-	"path"
 	"strconv"
 	"testing"
 	"time"
@@ -46,16 +37,16 @@ gf:
      path: "sw"
    commonService:
      enabled: true
-   tv:
+   docs:
      enabled: true
    prom:
      enabled: true
      pusher:
        enabled: false
-   interceptors:
-     loggingZap:
+   middleware:
+     logging:
        enabled: true
-     metricsProm:
+     prom:
        enabled: true
      auth:
        enabled: true
@@ -63,11 +54,9 @@ gf:
          - "user:pass"
      meta:
        enabled: true
-     tracingTelemetry:
+     trace:
        enabled: true
      ratelimit:
-       enabled: true
-     timeout:
        enabled: true
      cors:
        enabled: true
@@ -76,8 +65,6 @@ gf:
      secure:
        enabled: true
      csrf:
-       enabled: true
-     gzip:
        enabled: true
  - name: greeter2
    port: 2008
@@ -89,10 +76,10 @@ gf:
      enabled: true
    tv:
      enabled: true
-   interceptors:
-     loggingZap:
+   middleware:
+     logging:
        enabled: true
-     metricsProm:
+     prom:
        enabled: true
      auth:
        enabled: true
@@ -109,10 +96,10 @@ func TestGetGfEntry(t *testing.T) {
 	assert.Nil(t, GetGfEntry("entry-name"))
 
 	// happy case
-	ginEntry := RegisterGfEntry(WithName("ut-gin"))
-	assert.Equal(t, ginEntry, GetGfEntry("ut-gin"))
+	gfEntry := RegisterGfEntry(WithName("ut-gf"))
+	assert.Equal(t, gfEntry, GetGfEntry("ut-gf"))
 
-	rkentry.GlobalAppCtx.RemoveEntry("ut-gin")
+	rkentry.GlobalAppCtx.RemoveEntry(gfEntry)
 }
 
 func TestRegisterGfEntry(t *testing.T) {
@@ -123,21 +110,40 @@ func TestRegisterGfEntry(t *testing.T) {
 	assert.NotEmpty(t, entry.GetType())
 	assert.NotEmpty(t, entry.GetDescription())
 	assert.NotEmpty(t, entry.String())
-	rkentry.GlobalAppCtx.RemoveEntry(entry.GetName())
+	rkentry.GlobalAppCtx.RemoveEntry(entry)
 
 	// with options
+	commonServiceEntry := rkentry.RegisterCommonServiceEntry(&rkentry.BootCommonService{
+		Enabled: true,
+	})
+	staticEntry := rkentry.RegisterStaticFileHandlerEntry(&rkentry.BootStaticFileHandler{
+		Enabled: true,
+	})
+	certEntry := rkentry.RegisterCertEntry(&rkentry.BootCert{
+		Cert: []*rkentry.BootCertE{
+			{
+				Name: "ut-cert",
+			},
+		},
+	})
+	swEntry := rkentry.RegisterSWEntry(&rkentry.BootSW{
+		Enabled: true,
+	})
+	promEntry := rkentry.RegisterPromEntry(&rkentry.BootProm{
+		Enabled: true,
+	})
+
 	entry = RegisterGfEntry(
-		WithZapLoggerEntry(nil),
-		WithEventLoggerEntry(nil),
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithTvEntry(rkentry.RegisterTvEntry()),
-		WithStaticFileHandlerEntry(rkentry.RegisterStaticFileHandlerEntry()),
-		WithCertEntry(rkentry.RegisterCertEntry()),
-		WithSwEntry(rkentry.RegisterSwEntry()),
+		WithLoggerEntry(rkentry.LoggerEntryNoop),
+		WithEventEntry(rkentry.EventEntryNoop),
+		WithCommonServiceEntry(commonServiceEntry),
+		WithStaticFileHandlerEntry(staticEntry),
+		WithCertEntry(certEntry[0]),
+		WithSwEntry(swEntry),
 		WithPort(8080),
 		WithName("ut-entry"),
 		WithDescription("ut-desc"),
-		WithPromEntry(rkentry.RegisterPromEntry()))
+		WithPromEntry(promEntry))
 
 	assert.NotEmpty(t, entry.GetName())
 	assert.NotEmpty(t, entry.GetType())
@@ -147,8 +153,8 @@ func TestRegisterGfEntry(t *testing.T) {
 	assert.True(t, entry.IsStaticFileHandlerEnabled())
 	assert.True(t, entry.IsPromEnabled())
 	assert.True(t, entry.IsCommonServiceEnabled())
-	assert.True(t, entry.IsTvEnabled())
-	assert.True(t, entry.IsTlsEnabled())
+	assert.False(t, entry.IsDocsEnabled())
+	assert.False(t, entry.IsTlsEnabled())
 
 	bytes, err := entry.MarshalJSON()
 	assert.NotEmpty(t, bytes)
@@ -156,11 +162,11 @@ func TestRegisterGfEntry(t *testing.T) {
 	assert.Nil(t, entry.UnmarshalJSON([]byte{}))
 }
 
-func TestGfEntry_AddInterceptor(t *testing.T) {
+func TestGfEntry_AddMiddleware(t *testing.T) {
 	defer assertNotPanic(t)
 	entry := RegisterGfEntry()
-	inter := rkgfmeta.Interceptor()
-	entry.AddInterceptor(inter)
+	inter := rkgfmeta.Middleware()
+	entry.AddMiddleware(inter)
 }
 
 func TestGinEntry_Bootstrap(t *testing.T) {
@@ -175,17 +181,33 @@ func TestGinEntry_Bootstrap(t *testing.T) {
 	entry.Interrupt(context.TODO())
 
 	// with enable sw, static, prom, common, tv, tls
-	certEntry := rkentry.RegisterCertEntry()
-	certEntry.Store.ServerCert, certEntry.Store.ServerKey = generateCerts()
+	commonServiceEntry := rkentry.RegisterCommonServiceEntry(&rkentry.BootCommonService{
+		Enabled: true,
+	})
+	staticEntry := rkentry.RegisterStaticFileHandlerEntry(&rkentry.BootStaticFileHandler{
+		Enabled: true,
+	})
+	certEntry := rkentry.RegisterCertEntry(&rkentry.BootCert{
+		Cert: []*rkentry.BootCertE{
+			{
+				Name: "ut-cert",
+			},
+		},
+	})
+	swEntry := rkentry.RegisterSWEntry(&rkentry.BootSW{
+		Enabled: true,
+	})
+	promEntry := rkentry.RegisterPromEntry(&rkentry.BootProm{
+		Enabled: true,
+	})
 
 	entry = RegisterGfEntry(
 		WithPort(8081),
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithTvEntry(rkentry.RegisterTvEntry()),
-		WithStaticFileHandlerEntry(rkentry.RegisterStaticFileHandlerEntry()),
-		WithCertEntry(certEntry),
-		WithSwEntry(rkentry.RegisterSwEntry()),
-		WithPromEntry(rkentry.RegisterPromEntry()))
+		WithCommonServiceEntry(commonServiceEntry),
+		WithStaticFileHandlerEntry(staticEntry),
+		WithCertEntry(certEntry[0]),
+		WithSwEntry(swEntry),
+		WithPromEntry(promEntry))
 	entry.Bootstrap(context.TODO())
 	validateServerIsUp(t, 8081, entry.IsTlsEnabled())
 	assert.NotEmpty(t, entry.Server.GetRoutes())
@@ -193,24 +215,9 @@ func TestGinEntry_Bootstrap(t *testing.T) {
 	entry.Interrupt(context.TODO())
 }
 
-func TestGfEntry_startServer_InvalidTls(t *testing.T) {
-	defer assertPanic(t)
-
-	// with invalid tls
-	entry := RegisterGfEntry(
-		WithPort(8080),
-		WithCertEntry(rkentry.RegisterCertEntry()))
-	event := rkentry.NoopEventLoggerEntry().GetEventFactory().CreateEventNoop()
-	logger := rkentry.NoopZapLoggerEntry().GetLogger()
-
-	entry.startServer(event, logger)
-}
-
 func TestRegisterGfEntriesWithConfig(t *testing.T) {
 	// write config file in unit test temp directory
-	tempDir := path.Join(t.TempDir(), "boot.yaml")
-	assert.Nil(t, ioutil.WriteFile(tempDir, []byte(defaultBootConfigStr), os.ModePerm))
-	entries := RegisterGfEntriesWithConfig(tempDir)
+	entries := RegisterGfEntryYAML([]byte(defaultBootConfigStr))
 	assert.NotNil(t, entries)
 	assert.Len(t, entries, 2)
 
@@ -223,116 +230,6 @@ func TestRegisterGfEntriesWithConfig(t *testing.T) {
 
 	greeter3 := entries["greeter3"]
 	assert.Nil(t, greeter3)
-}
-
-func TestGfEntry_constructSwUrl(t *testing.T) {
-	// happy case
-	ctx := &ghttp.Request{}
-	ctx.Request = &http.Request{
-		Host: "8.8.8.8:1111",
-	}
-
-	path := "ut-sw"
-	port := 1111
-
-	sw := rkentry.RegisterSwEntry(rkentry.WithPathSw(path), rkentry.WithPortSw(uint64(port)))
-	entry := RegisterGfEntry(WithSwEntry(sw), WithPort(uint64(port)))
-
-	assert.Equal(t, fmt.Sprintf("http://8.8.8.8:%s/%s/", strconv.Itoa(port), path), entry.constructSwUrl(ctx))
-
-	// with tls
-	ctx.Request.TLS = &tls.ConnectionState{}
-	assert.Equal(t, fmt.Sprintf("https://8.8.8.8:%s/%s/", strconv.Itoa(port), path), entry.constructSwUrl(ctx))
-
-	// without swagger
-	entry = RegisterGfEntry(WithPort(uint64(port)))
-	assert.Equal(t, "N/A", entry.constructSwUrl(ctx))
-}
-
-func TestGfEntry_API(t *testing.T) {
-	defer assertNotPanic(t)
-
-	entry := RegisterGfEntry(
-		WithPort(8080),
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithName("unit-test"))
-
-	entry.Bootstrap(context.TODO())
-
-	client := getClient()
-	resp, err := client.Get(context.TODO(), "/rk/v1/apis")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	entry.Interrupt(context.TODO())
-}
-
-func TestGfEntry_Req_HappyCase(t *testing.T) {
-	defer assertNotPanic(t)
-
-	entry := RegisterGfEntry(
-		WithPort(8080),
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithName("unit-test-req"))
-
-	entry.Bootstrap(context.TODO())
-
-	client := getClient()
-	resp, err := client.Get(context.TODO(), "/rk/v1/req")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	entry.Interrupt(context.TODO())
-}
-
-func TestGfEntry_Req_WithEmpty(t *testing.T) {
-	defer assertNotPanic(t)
-
-	entry := RegisterGfEntry(
-		WithPort(8080),
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithName("unit-test-req-empty"))
-
-	entry.Bootstrap(context.TODO())
-
-	entry.AddInterceptor(rkgfmetrics.Interceptor(
-		rkmidmetrics.WithRegisterer(prometheus.NewRegistry())))
-
-	client := getClient()
-	resp, err := client.Get(context.TODO(), "/rk/v1/req")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	entry.Interrupt(context.TODO())
-}
-
-func TestGfEntry_TV(t *testing.T) {
-	defer assertNotPanic(t)
-
-	entry := RegisterGfEntry(
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithTvEntry(rkentry.RegisterTvEntry()),
-		WithPort(8080),
-		WithName("ut-gf"))
-
-	entry.AddInterceptor(rkgfmetrics.Interceptor(
-		rkmidmetrics.WithEntryNameAndType("ut-gf", "Gf")))
-
-	entry.Bootstrap(context.TODO())
-
-	// for /api
-	client := getClient()
-	resp, err := client.Get(context.TODO(), "/rk/v1/tv/apis")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	// for default
-	client = getClient()
-	resp, err = client.Get(context.TODO(), "/rk/v1/tv/other")
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	entry.Interrupt(context.TODO())
 }
 
 func getClient() *gclient.Client {

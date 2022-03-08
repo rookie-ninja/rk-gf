@@ -10,106 +10,102 @@ import (
 	"github.com/gogf/gf/v2/os/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rookie-ninja/rk-common/common"
-	"github.com/rookie-ninja/rk-entry/entry"
-	rkmidauth "github.com/rookie-ninja/rk-entry/middleware/auth"
-	rkmidcors "github.com/rookie-ninja/rk-entry/middleware/cors"
-	rkmidcsrf "github.com/rookie-ninja/rk-entry/middleware/csrf"
-	rkmidjwt "github.com/rookie-ninja/rk-entry/middleware/jwt"
-	rkmidlog "github.com/rookie-ninja/rk-entry/middleware/log"
-	rkmidmeta "github.com/rookie-ninja/rk-entry/middleware/meta"
-	rkmidmetrics "github.com/rookie-ninja/rk-entry/middleware/metrics"
-	rkmidpanic "github.com/rookie-ninja/rk-entry/middleware/panic"
-	rkmidlimit "github.com/rookie-ninja/rk-entry/middleware/ratelimit"
-	rkmidsec "github.com/rookie-ninja/rk-entry/middleware/secure"
-	rkmidtrace "github.com/rookie-ninja/rk-entry/middleware/tracing"
-	rkgfinter "github.com/rookie-ninja/rk-gf/interceptor"
-	"github.com/rookie-ninja/rk-gf/interceptor/auth"
-	rkgfctx "github.com/rookie-ninja/rk-gf/interceptor/context"
-	"github.com/rookie-ninja/rk-gf/interceptor/cors"
-	"github.com/rookie-ninja/rk-gf/interceptor/csrf"
-	"github.com/rookie-ninja/rk-gf/interceptor/jwt"
-	"github.com/rookie-ninja/rk-gf/interceptor/log/zap"
-	"github.com/rookie-ninja/rk-gf/interceptor/meta"
-	"github.com/rookie-ninja/rk-gf/interceptor/metrics/prom"
-	rkgfpanic "github.com/rookie-ninja/rk-gf/interceptor/panic"
-	"github.com/rookie-ninja/rk-gf/interceptor/ratelimit"
-	"github.com/rookie-ninja/rk-gf/interceptor/secure"
-	"github.com/rookie-ninja/rk-gf/interceptor/tracing/telemetry"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
+	"github.com/rookie-ninja/rk-entry/v2/middleware"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/auth"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/cors"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/csrf"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/jwt"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/log"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/meta"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/panic"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/prom"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/ratelimit"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/secure"
+	"github.com/rookie-ninja/rk-entry/v2/middleware/tracing"
+	rkgfinter "github.com/rookie-ninja/rk-gf/middleware"
+	"github.com/rookie-ninja/rk-gf/middleware/auth"
+	"github.com/rookie-ninja/rk-gf/middleware/cors"
+	"github.com/rookie-ninja/rk-gf/middleware/csrf"
+	"github.com/rookie-ninja/rk-gf/middleware/jwt"
+	"github.com/rookie-ninja/rk-gf/middleware/log"
+	"github.com/rookie-ninja/rk-gf/middleware/meta"
+	"github.com/rookie-ninja/rk-gf/middleware/panic"
+	"github.com/rookie-ninja/rk-gf/middleware/prom"
+	"github.com/rookie-ninja/rk-gf/middleware/ratelimit"
+	"github.com/rookie-ninja/rk-gf/middleware/secure"
+	"github.com/rookie-ninja/rk-gf/middleware/tracing"
 	"github.com/rookie-ninja/rk-query"
 	"go.uber.org/zap"
 	"net/http"
 	"path"
-	"reflect"
-	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
 	// GfEntryType type of entry
-	GfEntryType = "GoFrame"
-	// GfEntryDescription description of entry
-	GfEntryDescription = "Internal RK entry which helps to bootstrap with GoFrame framework."
+	GfEntryType = "GoFrameType"
 )
 
 // This must be declared in order to register registration function into rk context
 // otherwise, rk-boot won't able to bootstrap GoFrame entry automatically from boot config file
 func init() {
-	rkentry.RegisterEntryRegFunc(RegisterGfEntriesWithConfig)
+	rkentry.RegisterEntryRegFunc(RegisterGfEntryYAML)
 }
 
-// BootConfigGf boot config which is for GoFrame entry.
-type BootConfigGf struct {
+// BootGf boot config which is for GoFrame entry.
+type BootGf struct {
 	Gf []struct {
-		Enabled       bool                            `yaml:"enabled" json:"enabled"`
-		Name          string                          `yaml:"name" json:"name"`
-		Port          uint64                          `yaml:"port" json:"port"`
-		Description   string                          `yaml:"description" json:"description"`
-		CertEntry     string                          `yaml:"certEntry" json:"certEntry"`
-		SW            rkentry.BootConfigSw            `yaml:"sw" json:"sw"`
-		CommonService rkentry.BootConfigCommonService `yaml:"commonService" json:"commonService"`
-		TV            rkentry.BootConfigTv            `yaml:"tv" json:"tv"`
-		Prom          rkentry.BootConfigProm          `yaml:"prom" json:"prom"`
-		Static        rkentry.BootConfigStaticHandler `yaml:"static" json:"static"`
-		Interceptors  struct {
-			LoggingZap       rkmidlog.BootConfig     `yaml:"loggingZap" json:"loggingZap"`
-			MetricsProm      rkmidmetrics.BootConfig `yaml:"metricsProm" json:"metricsProm"`
-			Auth             rkmidauth.BootConfig    `yaml:"auth" json:"auth"`
-			Cors             rkmidcors.BootConfig    `yaml:"cors" json:"cors"`
-			Meta             rkmidmeta.BootConfig    `yaml:"meta" json:"meta"`
-			Jwt              rkmidjwt.BootConfig     `yaml:"jwt" json:"jwt"`
-			Secure           rkmidsec.BootConfig     `yaml:"secure" json:"secure"`
-			RateLimit        rkmidlimit.BootConfig   `yaml:"rateLimit" json:"rateLimit"`
-			Csrf             rkmidcsrf.BootConfig    `yaml:"csrf" yaml:"csrf"`
-			TracingTelemetry rkmidtrace.BootConfig   `yaml:"tracingTelemetry" json:"tracingTelemetry"`
-		} `yaml:"interceptors" json:"interceptors"`
-		Logger struct {
-			ZapLogger   string `yaml:"zapLogger" json:"zapLogger"`
-			EventLogger string `yaml:"eventLogger" json:"eventLogger"`
-		} `yaml:"logger" json:"logger"`
+		Enabled       bool                          `yaml:"enabled" json:"enabled"`
+		Name          string                        `yaml:"name" json:"name"`
+		Port          uint64                        `yaml:"port" json:"port"`
+		Description   string                        `yaml:"description" json:"description"`
+		CertEntry     string                        `yaml:"certEntry" json:"certEntry"`
+		LoggerEntry   string                        `yaml:"loggerEntry" json:"loggerEntry"`
+		EventEntry    string                        `yaml:"eventEntry" json:"eventEntry"`
+		SW            rkentry.BootSW                `yaml:"sw" json:"sw"`
+		Docs          rkentry.BootDocs              `yaml:"docs" json:"docs"`
+		CommonService rkentry.BootCommonService     `yaml:"commonService" json:"commonService"`
+		Prom          rkentry.BootProm              `yaml:"prom" json:"prom"`
+		Static        rkentry.BootStaticFileHandler `yaml:"static" json:"static"`
+		Middleware    struct {
+			Ignore    []string              `yaml:"ignore" json:"ignore"`
+			Logging   rkmidlog.BootConfig   `yaml:"logging" json:"logging"`
+			Prom      rkmidprom.BootConfig  `yaml:"prom" json:"prom"`
+			Auth      rkmidauth.BootConfig  `yaml:"auth" json:"auth"`
+			Cors      rkmidcors.BootConfig  `yaml:"cors" json:"cors"`
+			Meta      rkmidmeta.BootConfig  `yaml:"meta" json:"meta"`
+			Jwt       rkmidjwt.BootConfig   `yaml:"jwt" json:"jwt"`
+			Secure    rkmidsec.BootConfig   `yaml:"secure" json:"secure"`
+			RateLimit rkmidlimit.BootConfig `yaml:"rateLimit" json:"rateLimit"`
+			Csrf      rkmidcsrf.BootConfig  `yaml:"csrf" yaml:"csrf"`
+			Trace     rkmidtrace.BootConfig `yaml:"trace" json:"trace"`
+		} `yaml:"middleware" json:"middleware"`
 	} `yaml:"gf" json:"gf"`
 }
 
 // GfEntry implements rkentry.Entry interface.
 type GfEntry struct {
-	EntryName          string                          `json:"entryName" yaml:"entryName"`
-	EntryType          string                          `json:"entryType" yaml:"entryType"`
-	EntryDescription   string                          `json:"-" yaml:"-"`
-	ZapLoggerEntry     *rkentry.ZapLoggerEntry         `json:"-" yaml:"-"`
-	EventLoggerEntry   *rkentry.EventLoggerEntry       `json:"-" yaml:"-"`
-	Port               uint64                          `json:"port" yaml:"port"`
-	Server             *ghttp.Server                   `json:"-" yaml:"-"`
+	entryName          string                          `json:"-" yaml:"-"`
+	entryType          string                          `json:"-" yaml:"-"`
+	entryDescription   string                          `json:"-" yaml:"-"`
+	LoggerEntry        *rkentry.LoggerEntry            `json:"-" yaml:"-"`
+	EventEntry         *rkentry.EventEntry             `json:"-" yaml:"-"`
 	CertEntry          *rkentry.CertEntry              `json:"-" yaml:"-"`
-	SwEntry            *rkentry.SwEntry                `json:"-" yaml:"-"`
+	Port               uint64                          `json:"-" yaml:"-"`
+	Server             *ghttp.Server                   `json:"-" yaml:"-"`
+	SwEntry            *rkentry.SWEntry                `json:"-" yaml:"-"`
 	CommonServiceEntry *rkentry.CommonServiceEntry     `json:"-" yaml:"-"`
-	Interceptors       []ghttp.HandlerFunc             `json:"-" yaml:"-"`
 	PromEntry          *rkentry.PromEntry              `json:"-" yaml:"-"`
+	DocsEntry          *rkentry.DocsEntry              `json:"-" yaml:"-"`
 	StaticFileEntry    *rkentry.StaticFileHandlerEntry `json:"-" yaml:"-"`
-	TvEntry            *rkentry.TvEntry                `json:"-" yaml:"-"`
+	Middlewares        []ghttp.HandlerFunc             `json:"-" yaml:"-"`
+	bootstrapLogOnce   sync.Once                       `json:"-" yaml:"-"`
 }
 
-// RegisterGfEntriesWithConfig register GoFrame entries with provided config file (Must YAML file).
+// RegisterGfEntryYAML register GoFrame entries with provided config file (Must YAML file).
 //
 // Currently, support two ways to provide config file path.
 // 1: With function parameters
@@ -127,12 +123,12 @@ type GfEntry struct {
 // Example of common usage: ./binary_file --rkset "key1=val1,key2=val2"
 // Example of nested map:   ./binary_file --rkset "outer.inner.key=val"
 // Example of slice:        ./binary_file --rkset "outer[0].key=val"
-func RegisterGfEntriesWithConfig(configFilePath string) map[string]rkentry.Entry {
+func RegisterGfEntryYAML(raw []byte) map[string]rkentry.Entry {
 	res := make(map[string]rkentry.Entry)
 
 	// 1: Decode config map into boot config struct
-	config := &BootConfigGf{}
-	rkcommon.UnmarshalBootConfig(configFilePath, config)
+	config := &BootGf{}
+	rkentry.UnmarshalBootYAML(raw, config)
 
 	// 2: Init GoFrame entries with boot config
 	for i := range config.Gf {
@@ -143,106 +139,111 @@ func RegisterGfEntriesWithConfig(configFilePath string) map[string]rkentry.Entry
 
 		name := element.Name
 
-		zapLoggerEntry := rkentry.GlobalAppCtx.GetZapLoggerEntry(element.Logger.ZapLogger)
-		if zapLoggerEntry == nil {
-			zapLoggerEntry = rkentry.GlobalAppCtx.GetZapLoggerEntryDefault()
+		// logger entry
+		loggerEntry := rkentry.GlobalAppCtx.GetLoggerEntry(element.LoggerEntry)
+		if loggerEntry == nil {
+			loggerEntry = rkentry.LoggerEntryStdout
 		}
 
-		eventLoggerEntry := rkentry.GlobalAppCtx.GetEventLoggerEntry(element.Logger.EventLogger)
-		if eventLoggerEntry == nil {
-			eventLoggerEntry = rkentry.GlobalAppCtx.GetEventLoggerEntryDefault()
+		// event entry
+		eventEntry := rkentry.GlobalAppCtx.GetEventEntry(element.EventEntry)
+		if eventEntry == nil {
+			eventEntry = rkentry.EventEntryStdout
 		}
+
+		// cert entry
+		certEntry := rkentry.GlobalAppCtx.GetCertEntry(element.CertEntry)
 
 		// Register swagger entry
-		swEntry := rkentry.RegisterSwEntryWithConfig(&element.SW, element.Name, element.Port,
-			zapLoggerEntry, eventLoggerEntry, element.CommonService.Enabled)
+		swEntry := rkentry.RegisterSWEntry(&element.SW, rkentry.WithNameSWEntry(element.Name))
+
+		// Register docs entry
+		docsEntry := rkentry.RegisterDocsEntry(&element.Docs, rkentry.WithNameDocsEntry(element.Name))
 
 		// Register prometheus entry
 		promRegistry := prometheus.NewRegistry()
-		promEntry := rkentry.RegisterPromEntryWithConfig(&element.Prom, element.Name, element.Port,
-			zapLoggerEntry, eventLoggerEntry, promRegistry)
+		promEntry := rkentry.RegisterPromEntry(&element.Prom, rkentry.WithRegistryPromEntry(promRegistry))
 
 		// Register common service entry
-		commonServiceEntry := rkentry.RegisterCommonServiceEntryWithConfig(&element.CommonService, element.Name,
-			zapLoggerEntry, eventLoggerEntry)
-
-		// Register TV entry
-		tvEntry := rkentry.RegisterTvEntryWithConfig(&element.TV, element.Name,
-			zapLoggerEntry, eventLoggerEntry)
+		commonServiceEntry := rkentry.RegisterCommonServiceEntry(&element.CommonService)
 
 		// Register static file handler
-		staticEntry := rkentry.RegisterStaticFileHandlerEntryWithConfig(&element.Static, element.Name,
-			zapLoggerEntry, eventLoggerEntry)
+		staticEntry := rkentry.RegisterStaticFileHandlerEntry(&element.Static, rkentry.WithNameStaticFileHandlerEntry(element.Name))
 
 		inters := make([]ghttp.HandlerFunc, 0)
 
+		// add global path ignorance
+		rkmid.AddPathToIgnoreGlobal(element.Middleware.Ignore...)
+
 		// logging middlewares
-		if element.Interceptors.LoggingZap.Enabled {
-			inters = append(inters, rkgflog.Interceptor(
-				rkmidlog.ToOptions(&element.Interceptors.LoggingZap, element.Name, GfEntryType,
-					zapLoggerEntry, eventLoggerEntry)...))
+		if element.Middleware.Logging.Enabled {
+			inters = append(inters, rkgflog.Middleware(
+				rkmidlog.ToOptions(&element.Middleware.Logging, element.Name, GfEntryType,
+					loggerEntry, eventEntry)...))
 		}
 
+		// insert panic interceptor
+		inters = append(inters, rkgfpanic.Middleware(
+			rkmidpanic.WithEntryNameAndType(element.Name, GfEntryType)))
+
 		// metrics middleware
-		if element.Interceptors.MetricsProm.Enabled {
-			inters = append(inters, rkgfmetrics.Interceptor(
-				rkmidmetrics.ToOptions(&element.Interceptors.MetricsProm, element.Name, GfEntryType,
-					promRegistry, rkmidmetrics.LabelerTypeHttp)...))
+		if element.Middleware.Prom.Enabled {
+			inters = append(inters, rkgfprom.Middleware(
+				rkmidprom.ToOptions(&element.Middleware.Prom, element.Name, GfEntryType,
+					promRegistry, rkmidprom.LabelerTypeHttp)...))
 		}
 
 		// tracing middleware
-		if element.Interceptors.TracingTelemetry.Enabled {
-			inters = append(inters, rkgftrace.Interceptor(
-				rkmidtrace.ToOptions(&element.Interceptors.TracingTelemetry, element.Name, GfEntryType)...))
+		if element.Middleware.Trace.Enabled {
+			inters = append(inters, rkgftrace.Middleware(
+				rkmidtrace.ToOptions(&element.Middleware.Trace, element.Name, GfEntryType)...))
 		}
 
 		// jwt middleware
-		if element.Interceptors.Jwt.Enabled {
-			inters = append(inters, rkgfjwt.Interceptor(
-				rkmidjwt.ToOptions(&element.Interceptors.Jwt, element.Name, GfEntryType)...))
+		if element.Middleware.Jwt.Enabled {
+			inters = append(inters, rkgfjwt.Middleware(
+				rkmidjwt.ToOptions(&element.Middleware.Jwt, element.Name, GfEntryType)...))
 		}
 
 		// secure middleware
-		if element.Interceptors.Secure.Enabled {
-			inters = append(inters, rkgfsec.Interceptor(
-				rkmidsec.ToOptions(&element.Interceptors.Secure, element.Name, GfEntryType)...))
+		if element.Middleware.Secure.Enabled {
+			inters = append(inters, rkgfsec.Middleware(
+				rkmidsec.ToOptions(&element.Middleware.Secure, element.Name, GfEntryType)...))
 		}
 
 		// csrf middleware
-		if element.Interceptors.Csrf.Enabled {
-			inters = append(inters, rkgfcsrf.Interceptor(
-				rkmidcsrf.ToOptions(&element.Interceptors.Csrf, element.Name, GfEntryType)...))
+		if element.Middleware.Csrf.Enabled {
+			inters = append(inters, rkgfcsrf.Middleware(
+				rkmidcsrf.ToOptions(&element.Middleware.Csrf, element.Name, GfEntryType)...))
 		}
 
 		// Did we enabled cors interceptor?
-		if element.Interceptors.Cors.Enabled {
-			inters = append(inters, rkgfcors.Interceptor(
-				rkmidcors.ToOptions(&element.Interceptors.Cors, element.Name, GfEntryType)...))
+		if element.Middleware.Cors.Enabled {
+			inters = append(inters, rkgfcors.Middleware(
+				rkmidcors.ToOptions(&element.Middleware.Cors, element.Name, GfEntryType)...))
 		}
 
 		// meta middleware
-		if element.Interceptors.Meta.Enabled {
-			inters = append(inters, rkgfmeta.Interceptor(
-				rkmidmeta.ToOptions(&element.Interceptors.Meta, element.Name, GfEntryType)...))
+		if element.Middleware.Meta.Enabled {
+			inters = append(inters, rkgfmeta.Middleware(
+				rkmidmeta.ToOptions(&element.Middleware.Meta, element.Name, GfEntryType)...))
 		}
 
 		// auth middlewares
-		if element.Interceptors.Auth.Enabled {
-			inters = append(inters, rkgfauth.Interceptor(
-				rkmidauth.ToOptions(&element.Interceptors.Auth, element.Name, GfEntryType)...))
+		if element.Middleware.Auth.Enabled {
+			inters = append(inters, rkgfauth.Middleware(
+				rkmidauth.ToOptions(&element.Middleware.Auth, element.Name, GfEntryType)...))
 		}
 
 		// rate limit middleware
-		if element.Interceptors.RateLimit.Enabled {
-			inters = append(inters, rkgflimit.Interceptor(
-				rkmidlimit.ToOptions(&element.Interceptors.RateLimit, element.Name, GfEntryType)...))
+		if element.Middleware.RateLimit.Enabled {
+			inters = append(inters, rkgflimit.Middleware(
+				rkmidlimit.ToOptions(&element.Middleware.RateLimit, element.Name, GfEntryType)...))
 		}
 
-		certEntry := rkentry.GlobalAppCtx.GetCertEntry(element.CertEntry)
-
 		entry := RegisterGfEntry(
-			WithZapLoggerEntry(zapLoggerEntry),
-			WithEventLoggerEntry(eventLoggerEntry),
+			WithLoggerEntry(loggerEntry),
+			WithEventEntry(eventEntry),
 			WithName(name),
 			WithDescription(element.Description),
 			WithPort(element.Port),
@@ -250,11 +251,11 @@ func RegisterGfEntriesWithConfig(configFilePath string) map[string]rkentry.Entry
 			WithPromEntry(promEntry),
 			WithCommonServiceEntry(commonServiceEntry),
 			WithCertEntry(certEntry),
-			WithTvEntry(tvEntry),
+			WithDocsEntry(docsEntry),
 			WithStaticFileHandlerEntry(staticEntry),
-			WithInterceptors(inters...))
+			WithMiddlewares(inters...))
 
-		entry.AddInterceptor(inters...)
+		entry.AddMiddleware(inters...)
 
 		res[name] = entry
 	}
@@ -265,11 +266,11 @@ func RegisterGfEntriesWithConfig(configFilePath string) map[string]rkentry.Entry
 // RegisterGfEntry register GfEntry with options.
 func RegisterGfEntry(opts ...GfEntryOption) *GfEntry {
 	entry := &GfEntry{
-		ZapLoggerEntry:   rkentry.GlobalAppCtx.GetZapLoggerEntryDefault(),
-		EventLoggerEntry: rkentry.GlobalAppCtx.GetEventLoggerEntryDefault(),
-		EntryType:        GfEntryType,
-		EntryDescription: GfEntryDescription,
-		Interceptors:     make([]ghttp.HandlerFunc, 0),
+		entryType:        GfEntryType,
+		entryDescription: "Internal RK entry which helps to bootstrap with GoFrame framework.",
+		LoggerEntry:      rkentry.NewLoggerEntryStdout(),
+		EventEntry:       rkentry.NewEventEntryStdout(),
+		Middlewares:      make([]ghttp.HandlerFunc, 0),
 		Port:             80,
 	}
 
@@ -277,22 +278,14 @@ func RegisterGfEntry(opts ...GfEntryOption) *GfEntry {
 		opts[i](entry)
 	}
 
-	if entry.ZapLoggerEntry == nil {
-		entry.ZapLoggerEntry = rkentry.GlobalAppCtx.GetZapLoggerEntryDefault()
-	}
-
-	if entry.EventLoggerEntry == nil {
-		entry.EventLoggerEntry = rkentry.GlobalAppCtx.GetEventLoggerEntryDefault()
-	}
-
-	if len(entry.EntryName) < 1 {
-		entry.EntryName = "GfServer-" + strconv.FormatUint(entry.Port, 10)
+	if len(entry.entryName) < 1 {
+		entry.entryName = "gf-" + strconv.FormatUint(entry.Port, 10)
 	}
 
 	if entry.Server == nil {
-		entry.Server = g.Server(entry.EntryName)
+		entry.Server = g.Server(entry.entryName)
 		entry.Server.SetDumpRouterMap(false)
-		entry.Server.SetLogger(rkgfinter.NewNoopGLogger())
+		entry.Server.SetLogger(rkgfinter.NewGLogger(entry.LoggerEntry))
 		glog.SetStdoutPrint(false)
 	}
 
@@ -301,12 +294,8 @@ func RegisterGfEntry(opts ...GfEntryOption) *GfEntry {
 	}
 
 	// add entry name and entry type into loki syncer if enabled
-	entry.ZapLoggerEntry.AddEntryLabelToLokiSyncer(entry)
-	entry.EventLoggerEntry.AddEntryLabelToLokiSyncer(entry)
-
-	// insert panic interceptor
-	entry.Server.Use(rkgfpanic.Interceptor(
-		rkmidpanic.WithEntryNameAndType(entry.EntryName, entry.EntryType)))
+	entry.LoggerEntry.AddEntryLabelToLokiSyncer(entry)
+	entry.EventEntry.AddEntryLabelToLokiSyncer(entry)
 
 	rkentry.GlobalAppCtx.AddEntry(entry)
 
@@ -315,29 +304,47 @@ func RegisterGfEntry(opts ...GfEntryOption) *GfEntry {
 
 // GetName Get entry name.
 func (entry *GfEntry) GetName() string {
-	return entry.EntryName
+	return entry.entryName
 }
 
 // GetType Get entry type.
 func (entry *GfEntry) GetType() string {
-	return entry.EntryType
+	return entry.entryType
 }
 
 // GetDescription Get description of entry.
 func (entry *GfEntry) GetDescription() string {
-	return entry.EntryDescription
+	return entry.entryDescription
 }
 
 // Bootstrap GfEntry.
 func (entry *GfEntry) Bootstrap(ctx context.Context) {
 	event, logger := entry.logBasicInfo("Bootstrap", ctx)
 
+	// Is common service enabled?
+	if entry.IsCommonServiceEnabled() {
+		// Register common service path into Router.
+		entry.Server.BindHandler(entry.CommonServiceEntry.ReadyPath, ghttp.WrapF(entry.CommonServiceEntry.Ready))
+		entry.Server.BindHandler(entry.CommonServiceEntry.GcPath, ghttp.WrapF(entry.CommonServiceEntry.Gc))
+		entry.Server.BindHandler(entry.CommonServiceEntry.InfoPath, ghttp.WrapF(entry.CommonServiceEntry.Info))
+		entry.Server.BindHandler(entry.CommonServiceEntry.AlivePath, ghttp.WrapF(entry.CommonServiceEntry.Alive))
+
+		// Bootstrap common service entry.
+		entry.CommonServiceEntry.Bootstrap(ctx)
+	}
+
 	// Is swagger enabled?
 	if entry.IsSwEnabled() {
 		// Register swagger path into Router.
 		entry.Server.BindHandler(path.Join(entry.SwEntry.Path, "*any"), ghttp.WrapF(entry.SwEntry.ConfigFileHandler()))
-		entry.Server.BindHandler(path.Join(entry.SwEntry.AssetsFilePath, "*"), ghttp.WrapF(entry.SwEntry.AssetsFileHandler()))
 		entry.SwEntry.Bootstrap(ctx)
+	}
+
+	// Is Docs enabled?
+	if entry.IsDocsEnabled() {
+		// Bootstrap Docs entry.
+		entry.Server.BindHandler(path.Join(entry.DocsEntry.Path, "*any"), ghttp.WrapF(entry.DocsEntry.ConfigFileHandler()))
+		entry.DocsEntry.Bootstrap(ctx)
 	}
 
 	// Is static file handler enabled?
@@ -354,46 +361,38 @@ func (entry *GfEntry) Bootstrap(ctx context.Context) {
 		entry.PromEntry.Bootstrap(ctx)
 	}
 
-	// Is common service enabled?
-	if entry.IsCommonServiceEnabled() {
-		// Register common service path into Router.
-		entry.Server.BindHandler(entry.CommonServiceEntry.HealthyPath, ghttp.WrapF(entry.CommonServiceEntry.Healthy))
-		entry.Server.BindHandler(entry.CommonServiceEntry.GcPath, ghttp.WrapF(entry.CommonServiceEntry.Gc))
-		entry.Server.BindHandler(entry.CommonServiceEntry.InfoPath, ghttp.WrapF(entry.CommonServiceEntry.Info))
-		entry.Server.BindHandler(entry.CommonServiceEntry.ConfigsPath, ghttp.WrapF(entry.CommonServiceEntry.Configs))
-		entry.Server.BindHandler(entry.CommonServiceEntry.SysPath, ghttp.WrapF(entry.CommonServiceEntry.Sys))
-		entry.Server.BindHandler(entry.CommonServiceEntry.EntriesPath, ghttp.WrapF(entry.CommonServiceEntry.Entries))
-		entry.Server.BindHandler(entry.CommonServiceEntry.CertsPath, ghttp.WrapF(entry.CommonServiceEntry.Certs))
-		entry.Server.BindHandler(entry.CommonServiceEntry.LogsPath, ghttp.WrapF(entry.CommonServiceEntry.Logs))
-		entry.Server.BindHandler(entry.CommonServiceEntry.DepsPath, ghttp.WrapF(entry.CommonServiceEntry.Deps))
-		entry.Server.BindHandler(entry.CommonServiceEntry.LicensePath, ghttp.WrapF(entry.CommonServiceEntry.License))
-		entry.Server.BindHandler(entry.CommonServiceEntry.ReadmePath, ghttp.WrapF(entry.CommonServiceEntry.Readme))
-		entry.Server.BindHandler(entry.CommonServiceEntry.GitPath, ghttp.WrapF(entry.CommonServiceEntry.Git))
-
-		// swagger doc already generated at rkentry.CommonService
-		// follow bellow actions
-		entry.Server.BindHandler(entry.CommonServiceEntry.ApisPath, entry.Apis)
-		entry.Server.BindHandler(entry.CommonServiceEntry.ReqPath, entry.Req)
-
-		// Bootstrap common service entry.
-		entry.CommonServiceEntry.Bootstrap(ctx)
-	}
-
-	// Is TV enabled?
-	if entry.IsTvEnabled() {
-		// Bootstrap TV entry.
-		entry.Server.BindHandler(strings.TrimSuffix(entry.TvEntry.BasePath, "/"), func(ctx *ghttp.Request) {
-			ctx.Response.RedirectTo(entry.SwEntry.Path, http.StatusTemporaryRedirect)
-		})
-		entry.Server.BindHandler(path.Join(entry.TvEntry.BasePath, "*item"), entry.TV)
-		entry.Server.BindHandler(path.Join(entry.TvEntry.AssetsFilePath, "*"), ghttp.WrapF(entry.TvEntry.AssetsFileHandler()))
-
-		entry.TvEntry.Bootstrap(ctx)
-	}
-
 	go entry.startServer(event, logger)
 
-	entry.EventLoggerEntry.GetEventHelper().Finish(event)
+	entry.bootstrapLogOnce.Do(func() {
+		// Print link and logging message
+		scheme := "http"
+		if entry.IsTlsEnabled() {
+			scheme = "https"
+		}
+
+		if entry.IsSwEnabled() {
+			entry.LoggerEntry.Info(fmt.Sprintf("SwaggerEntry: %s://localhost:%d%s", scheme, entry.Port, entry.SwEntry.Path))
+		}
+		if entry.IsDocsEnabled() {
+			entry.LoggerEntry.Info(fmt.Sprintf("DocsEntry: %s://localhost:%d%s", scheme, entry.Port, entry.DocsEntry.Path))
+		}
+		if entry.IsPromEnabled() {
+			entry.LoggerEntry.Info(fmt.Sprintf("PromEntry: %s://localhost:%d%s", scheme, entry.Port, entry.PromEntry.Path))
+		}
+		if entry.IsStaticFileHandlerEnabled() {
+			entry.LoggerEntry.Info(fmt.Sprintf("StaticFileHandlerEntry: %s://localhost:%d%s", scheme, entry.Port, entry.StaticFileEntry.Path))
+		}
+		if entry.IsCommonServiceEnabled() {
+			handlers := []string{
+				fmt.Sprintf("%s://localhost:%d%s", scheme, entry.Port, entry.CommonServiceEntry.ReadyPath),
+				fmt.Sprintf("%s://localhost:%d%s", scheme, entry.Port, entry.CommonServiceEntry.AlivePath),
+				fmt.Sprintf("%s://localhost:%d%s", scheme, entry.Port, entry.CommonServiceEntry.InfoPath),
+			}
+
+			entry.LoggerEntry.Info(fmt.Sprintf("CommonSreviceEntry: %s", strings.Join(handlers, ", ")))
+		}
+		entry.EventEntry.Finish(event)
+	})
 }
 
 // Interrupt GfEntry.
@@ -420,9 +419,9 @@ func (entry *GfEntry) Interrupt(ctx context.Context) {
 		entry.CommonServiceEntry.Interrupt(ctx)
 	}
 
-	if entry.IsTvEnabled() {
+	if entry.IsDocsEnabled() {
 		// Interrupt common service entry
-		entry.TvEntry.Interrupt(ctx)
+		entry.DocsEntry.Interrupt(ctx)
 	}
 
 	if entry.Server != nil {
@@ -432,9 +431,9 @@ func (entry *GfEntry) Interrupt(ctx context.Context) {
 		}
 	}
 
-	rkentry.GlobalAppCtx.RemoveEntry(entry.GetName())
+	rkentry.GlobalAppCtx.RemoveEntry(entry)
 
-	entry.EventLoggerEntry.GetEventHelper().Finish(event)
+	entry.EventEntry.Finish(event)
 }
 
 // String Stringfy gf entry.
@@ -448,29 +447,19 @@ func (entry *GfEntry) String() string {
 // MarshalJSON Marshal entry.
 func (entry *GfEntry) MarshalJSON() ([]byte, error) {
 	m := map[string]interface{}{
-		"entryName":          entry.EntryName,
-		"entryType":          entry.EntryType,
-		"entryDescription":   entry.EntryDescription,
-		"eventLoggerEntry":   entry.EventLoggerEntry.GetName(),
-		"zapLoggerEntry":     entry.ZapLoggerEntry.GetName(),
-		"port":               entry.Port,
-		"swEntry":            entry.SwEntry,
-		"commonServiceEntry": entry.CommonServiceEntry,
-		"promEntry":          entry.PromEntry,
-		"tvEntry":            entry.TvEntry,
+		"name":                   entry.entryName,
+		"type":                   entry.entryType,
+		"description":            entry.entryDescription,
+		"port":                   entry.Port,
+		"swEntry":                entry.SwEntry,
+		"docsEntry":              entry.DocsEntry,
+		"commonServiceEntry":     entry.CommonServiceEntry,
+		"promEntry":              entry.PromEntry,
+		"staticFileHandlerEntry": entry.StaticFileEntry,
 	}
 
 	if entry.CertEntry != nil {
 		m["certEntry"] = entry.CertEntry.GetName()
-	}
-
-	interceptorsStr := make([]string, 0)
-	m["interceptors"] = &interceptorsStr
-
-	for i := range entry.Interceptors {
-		element := entry.Interceptors[i]
-		interceptorsStr = append(interceptorsStr,
-			path.Base(runtime.FuncForPC(reflect.ValueOf(element).Pointer()).Name()))
 	}
 
 	return json.Marshal(&m)
@@ -485,7 +474,7 @@ func (entry *GfEntry) UnmarshalJSON([]byte) error {
 
 // GetGfEntry Get GfEntry from rkentry.GlobalAppCtx.
 func GetGfEntry(name string) *GfEntry {
-	entryRaw := rkentry.GlobalAppCtx.GetEntry(name)
+	entryRaw := rkentry.GlobalAppCtx.GetEntry(GfEntryType, name)
 	if entryRaw == nil {
 		return nil
 	}
@@ -494,15 +483,15 @@ func GetGfEntry(name string) *GfEntry {
 	return entry
 }
 
-// AddInterceptor Add interceptors.
+// AddMiddleware Add middleware.
 // This function should be called before Bootstrap() called.
-func (entry *GfEntry) AddInterceptor(inters ...ghttp.HandlerFunc) {
+func (entry *GfEntry) AddMiddleware(inters ...ghttp.HandlerFunc) {
 	entry.Server.Use(inters...)
 }
 
 // IsTlsEnabled Is TLS enabled?
 func (entry *GfEntry) IsTlsEnabled() bool {
-	return entry.CertEntry != nil && entry.CertEntry.Store != nil
+	return entry.CertEntry != nil && entry.CertEntry.Certificate != nil
 }
 
 // IsSwEnabled Is swagger entry enabled?
@@ -520,9 +509,9 @@ func (entry *GfEntry) IsCommonServiceEnabled() bool {
 	return entry.CommonServiceEntry != nil
 }
 
-// IsTvEnabled Is TV entry enabled?
-func (entry *GfEntry) IsTvEnabled() bool {
-	return entry.TvEntry != nil
+// IsDocsEnabled Is Docs entry enabled?
+func (entry *GfEntry) IsDocsEnabled() bool {
+	return entry.DocsEntry != nil
 }
 
 // IsPromEnabled Is prometheus entry enabled?
@@ -534,7 +523,7 @@ func (entry *GfEntry) IsPromEnabled() bool {
 
 // Add basic fields into event.
 func (entry *GfEntry) logBasicInfo(operation string, ctx context.Context) (rkquery.Event, *zap.Logger) {
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
+	event := entry.EventEntry.Start(
 		operation,
 		rkquery.WithEntryName(entry.GetName()),
 		rkquery.WithEntryType(entry.GetType()))
@@ -546,10 +535,10 @@ func (entry *GfEntry) logBasicInfo(operation string, ctx context.Context) (rkque
 		}
 	}
 
-	logger := entry.ZapLoggerEntry.GetLogger().With(
+	logger := entry.LoggerEntry.With(
 		zap.String("eventId", event.GetEventId()),
-		zap.String("entryName", entry.EntryName),
-		zap.String("entryType", entry.EntryType))
+		zap.String("entryName", entry.entryName),
+		zap.String("entryType", entry.entryType))
 
 	// add general info
 	event.AddPayloads(
@@ -569,18 +558,18 @@ func (entry *GfEntry) logBasicInfo(operation string, ctx context.Context) (rkque
 			zap.String("commonServicePathPrefix", "/rk/v1/"))
 	}
 
-	// add TvEntry info
-	if entry.IsTvEnabled() {
+	// add DocsEntry info
+	if entry.IsDocsEnabled() {
 		event.AddPayloads(
-			zap.Bool("tvEnabled", true),
-			zap.String("tvPath", "/rk/v1/tv/"))
+			zap.Bool("docsEnabled", true),
+			zap.String("docsPath", entry.DocsEntry.Path))
 	}
 
 	// add PromEntry info
 	if entry.IsPromEnabled() {
 		event.AddPayloads(
 			zap.Bool("promEnabled", true),
-			zap.Uint64("promPort", entry.PromEntry.Port),
+			zap.Uint64("promPort", entry.Port),
 			zap.String("promPath", entry.PromEntry.Path))
 	}
 
@@ -608,13 +597,7 @@ func (entry *GfEntry) startServer(event rkquery.Event, logger *zap.Logger) {
 	if entry.Server != nil {
 		// If TLS was enabled, we need to load server certificate and key and start http server with ListenAndServeTLS()
 		if entry.IsTlsEnabled() {
-			if cert, err := tls.X509KeyPair(entry.CertEntry.Store.ServerCert, entry.CertEntry.Store.ServerKey); err != nil {
-				event.AddErr(err)
-				logger.Error("Error occurs while parsing TLS.", event.ListPayloads()...)
-				rkcommon.ShutdownWithError(err)
-			} else {
-				entry.Server.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{cert}})
-			}
+			entry.Server.SetTLSConfig(&tls.Config{Certificates: []tls.Certificate{*entry.CertEntry.Certificate}})
 		}
 
 		err := entry.Server.Start()
@@ -622,138 +605,8 @@ func (entry *GfEntry) startServer(event rkquery.Event, logger *zap.Logger) {
 		if err != nil && err != http.ErrServerClosed {
 			event.AddErr(err)
 			logger.Error("Error occurs while starting GoFrame server.", event.ListPayloads()...)
-			rkcommon.ShutdownWithError(err)
+			rkentry.ShutdownWithError(err)
 		}
-	}
-}
-
-// ***************** Common Service Extension API *****************
-
-// Apis list apis from gin.Router
-func (entry *GfEntry) Apis(ctx *ghttp.Request) {
-	ctx.Response.Header().Set("Access-Control-Allow-Origin", "*")
-
-	ctx.Response.WriteHeader(http.StatusOK)
-	ctx.Response.WriteJson(entry.doApis(ctx))
-}
-
-// Req handler
-func (entry *GfEntry) Req(ctx *ghttp.Request) {
-	ctx.Response.WriteHeader(http.StatusOK)
-	ctx.Response.WriteJson(entry.doReq(ctx))
-}
-
-// Construct swagger URL based on IP and scheme
-func (entry *GfEntry) constructSwUrl(ctx *ghttp.Request) string {
-	if entry.SwEntry == nil {
-		return "N/A"
-	}
-
-	originalURL := fmt.Sprintf("localhost:%d", entry.Port)
-	if ctx != nil && ctx.Request != nil && len(ctx.Request.Host) > 0 {
-		originalURL = ctx.Request.Host
-	}
-
-	scheme := "http"
-	if ctx != nil && ctx.Request != nil && ctx.Request.TLS != nil {
-		scheme = "https"
-	}
-
-	return fmt.Sprintf("%s://%s%s", scheme, originalURL, entry.SwEntry.Path)
-}
-
-// Helper function for APIs call
-func (entry *GfEntry) doApis(ctx *ghttp.Request) *rkentry.ApisResponse {
-	res := &rkentry.ApisResponse{
-		Entries: make([]*rkentry.ApisResponseElement, 0),
-	}
-
-	routes := entry.Server.GetRoutes()
-	for j := range routes {
-		info := routes[j]
-
-		entry := &rkentry.ApisResponseElement{
-			EntryName: entry.GetName(),
-			Method:    info.Method,
-			Path:      info.Route,
-			Port:      entry.Port,
-			SwUrl:     entry.constructSwUrl(ctx),
-		}
-		res.Entries = append(res.Entries, entry)
-	}
-
-	return res
-}
-
-// Is metrics from prometheus contains particular api?
-func (entry *GfEntry) containsMetrics(api string, metrics []*rkentry.ReqMetricsRK) bool {
-	for i := range metrics {
-		if metrics[i].RestPath == api {
-			return true
-		}
-	}
-
-	return false
-}
-
-// Helper function for Req call
-func (entry *GfEntry) doReq(ctx *ghttp.Request) *rkentry.ReqResponse {
-	metricsSet := rkmidmetrics.GetServerMetricsSet(entry.GetName())
-	if metricsSet == nil {
-		return &rkentry.ReqResponse{
-			Metrics: make([]*rkentry.ReqMetricsRK, 0),
-		}
-	}
-
-	vector := metricsSet.GetSummary(rkmidmetrics.MetricsNameElapsedNano)
-	if vector == nil {
-		return &rkentry.ReqResponse{
-			Metrics: make([]*rkentry.ReqMetricsRK, 0),
-		}
-	}
-
-	reqMetrics := rkentry.NewPromMetricsInfo(vector)
-
-	// Fill missed metrics
-	apis := make([]string, 0)
-	apisMethod := make([]string, 0)
-
-	routes := entry.Server.GetRoutes()
-	for j := range routes {
-		info := routes[j]
-		apis = append(apis, info.Route)
-		apisMethod = append(apisMethod, info.Method)
-	}
-
-	// Add empty metrics into result
-	for i := range apis {
-		if !entry.containsMetrics(apis[i], reqMetrics) {
-			reqMetrics = append(reqMetrics, &rkentry.ReqMetricsRK{
-				RestMethod: apisMethod[i],
-				RestPath:   apis[i],
-				ResCode:    make([]*rkentry.ResCodeRK, 0),
-			})
-		}
-	}
-
-	return &rkentry.ReqResponse{
-		Metrics: reqMetrics,
-	}
-}
-
-// TV handler
-func (entry *GfEntry) TV(ctx *ghttp.Request) {
-	logger := rkgfctx.GetLogger(ctx)
-
-	switch item := ctx.Get("item").String(); item {
-	case "apis":
-		buf := entry.TvEntry.ExecuteTemplate("apis", entry.doApis(ctx), logger)
-		ctx.Response.WriteHeader(http.StatusOK)
-		ctx.Response.Write(buf.Bytes())
-	default:
-		buf := entry.TvEntry.Action(item, logger)
-		ctx.Response.WriteHeader(http.StatusOK)
-		ctx.Response.Write(buf.Bytes())
 	}
 }
 
@@ -772,28 +625,28 @@ func WithPort(port uint64) GfEntryOption {
 // WithName provide name.
 func WithName(name string) GfEntryOption {
 	return func(entry *GfEntry) {
-		entry.EntryName = name
+		entry.entryName = name
 	}
 }
 
 // WithDescription provide name.
 func WithDescription(description string) GfEntryOption {
 	return func(entry *GfEntry) {
-		entry.EntryDescription = description
+		entry.entryDescription = description
 	}
 }
 
-// WithZapLoggerEntry provide rkentry.ZapLoggerEntry.
-func WithZapLoggerEntry(zapLogger *rkentry.ZapLoggerEntry) GfEntryOption {
+// WithLoggerEntry provide rkentry.LoggerEntry.
+func WithLoggerEntry(zapLogger *rkentry.LoggerEntry) GfEntryOption {
 	return func(entry *GfEntry) {
-		entry.ZapLoggerEntry = zapLogger
+		entry.LoggerEntry = zapLogger
 	}
 }
 
-// WithEventLoggerEntry provide rkentry.EventLoggerEntry.
-func WithEventLoggerEntry(eventLogger *rkentry.EventLoggerEntry) GfEntryOption {
+// WithEventEntry provide rkentry.EventEntry.
+func WithEventEntry(eventLogger *rkentry.EventEntry) GfEntryOption {
 	return func(entry *GfEntry) {
-		entry.EventLoggerEntry = eventLogger
+		entry.EventEntry = eventLogger
 	}
 }
 
@@ -805,7 +658,7 @@ func WithCertEntry(certEntry *rkentry.CertEntry) GfEntryOption {
 }
 
 // WithSwEntry provide SwEntry.
-func WithSwEntry(sw *rkentry.SwEntry) GfEntryOption {
+func WithSwEntry(sw *rkentry.SWEntry) GfEntryOption {
 	return func(entry *GfEntry) {
 		entry.SwEntry = sw
 	}
@@ -818,14 +671,14 @@ func WithCommonServiceEntry(commonServiceEntry *rkentry.CommonServiceEntry) GfEn
 	}
 }
 
-// WithInterceptors provide user interceptors.
-func WithInterceptors(inters ...ghttp.HandlerFunc) GfEntryOption {
+// WithMiddlewares provide user interceptors.
+func WithMiddlewares(inters ...ghttp.HandlerFunc) GfEntryOption {
 	return func(entry *GfEntry) {
-		if entry.Interceptors == nil {
-			entry.Interceptors = make([]ghttp.HandlerFunc, 0)
+		if entry.Middlewares == nil {
+			entry.Middlewares = make([]ghttp.HandlerFunc, 0)
 		}
 
-		entry.Interceptors = append(entry.Interceptors, inters...)
+		entry.Middlewares = append(entry.Middlewares, inters...)
 	}
 }
 
@@ -843,9 +696,9 @@ func WithStaticFileHandlerEntry(staticEntry *rkentry.StaticFileHandlerEntry) GfE
 	}
 }
 
-// WithTvEntry provide TvEntry.
-func WithTvEntry(tvEntry *rkentry.TvEntry) GfEntryOption {
+// WithDocsEntry provide rkentry.DocsEntry.
+func WithDocsEntry(docsEntry *rkentry.DocsEntry) GfEntryOption {
 	return func(entry *GfEntry) {
-		entry.TvEntry = tvEntry
+		entry.DocsEntry = docsEntry
 	}
 }
