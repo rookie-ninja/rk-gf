@@ -10,6 +10,7 @@ import (
 	"context"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/golang-jwt/jwt/v4"
+	rkcursor "github.com/rookie-ninja/rk-entry/v2/cursor"
 	"github.com/rookie-ninja/rk-entry/v2/middleware"
 	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
@@ -56,6 +57,14 @@ func SetHeaderToClient(ctx *ghttp.Request, key, value string) {
 	}
 	header := ctx.Response.Writer.Header()
 	header.Set(key, value)
+}
+
+// GetCursor create rkcursor.Cursor instance
+func GetCursor(ctx *ghttp.Request) *rkcursor.Cursor {
+	return rkcursor.NewCursor(
+		rkcursor.WithLogger(GetLogger(ctx)),
+		rkcursor.WithEvent(GetEvent(ctx)),
+		rkcursor.WithEntryNameAndType(GetEntryName(ctx), "GoFrameEntry"))
 }
 
 // GetEvent extract takes the call-scoped EventData from middleware.

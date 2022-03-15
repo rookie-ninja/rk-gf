@@ -46,7 +46,7 @@ import (
 
 const (
 	// GfEntryType type of entry
-	GfEntryType = "GoFrameType"
+	GfEntryType = "GoFrameEntry"
 )
 
 // This must be declared in order to register registration function into rk context
