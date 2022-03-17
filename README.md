@@ -35,7 +35,8 @@ All instances could be configured via YAML or Code.
 | Swagger           | Builtin swagger UI handler.                                                                                   |
 | Docs              | Builtin [RapiDoc](https://github.com/mrin9/RapiDoc) instance which can be used to replace swagger and RK TV.  |
 | CommonService     | List of common APIs.                                                                                          |
-| StaticFileHandler | A Web UI shows files could be downloaded from server, currently support source of local and pkger.            |
+| StaticFileHandler | A Web UI shows files could be downloaded from server, currently support source of local and embed.FS.         |
+| PProf             | PProf web UI.                                                                                                 |
 
 ## Supported middlewares
 All middlewares could be configured via YAML or Code.
@@ -548,18 +549,24 @@ In order to make swagger UI and RK tv work under JWT without JWT token, we need 
 jwt:
   ...
   ignore:
-   - "/sw"
+    - "/sw"
 ```
 
-| name                          | description                                                 | type     | default value          |
-|-------------------------------|-------------------------------------------------------------|----------|------------------------|
-| gf.middleware.jwt.enabled     | Enable JWT middleware                                       | boolean  | false                  |
-| gf.middleware.jwt.ignore      | Provide ignoring path prefix.                               | []string | []                     |
-| gf.middleware.jwt.signingKey  | Required, Provide signing key.                              | string   | ""                     |
-| gf.middleware.jwt.signingKeys | Provide signing keys as scheme of <key>:<value>.            | []string | []                     |
-| gf.middleware.jwt.signingAlgo | Provide signing algorithm.                                  | string   | HS256                  |
-| gf.middleware.jwt.tokenLookup | Provide token lookup scheme, please see bellow description. | string   | "header:Authorization" |
-| gf.middleware.jwt.authScheme  | Provide auth scheme.                                        | string   | Bearer                 |
+| name                                        | description                                                                      | type     | default value          |
+|---------------------------------------------|----------------------------------------------------------------------------------|----------|------------------------|
+| gf.middleware.jwt.enabled                   | Optional, Enable JWT middleware                                                  | boolean  | false                  |
+| gf.middleware.jwt.ignore                    | Optional, Provide ignoring path prefix.                                          | []string | []                     |
+| gf.middleware.jwt.signerEntry               | Optional, Provide signerEntry name.                                              | string   | ""                     |
+| gf.middleware.jwt.symmetric.algorithm       | Required if symmetric specified. One of HS256, HS384, HS512                      | string   | ""                     |
+| gf.middleware.jwt.symmetric.token           | Optional, raw token for signing and verification                                 | string   | ""                     |
+| gf.middleware.jwt.symmetric.tokenPath       | Optional, path of token file                                                     | string   | ""                     |
+| gf.middleware.jwt.asymmetric.algorithm      | Required if symmetric specified. One of RS256, RS384, RS512, ES256, ES384, ES512 | string   | ""                     |
+| gf.middleware.jwt.asymmetric.privateKey     | Optional, raw private key file for signing                                       | string   | ""                     |
+| gf.middleware.jwt.asymmetric.privateKeyPath | Optional, private key file path for signing                                      | string   | ""                     |
+| gf.middleware.jwt.asymmetric.publicKey      | Optional, raw public key file for verification                                   | string   | ""                     |
+| gf.middleware.jwt.asymmetric.publicKeyPath  | Optional, public key file path for verification                                  | string   | ""                     |
+| gf.middleware.jwt.tokenLookup               | Provide token lookup scheme, please see bellow description.                      | string   | "header:Authorization" |
+| gf.middleware.jwt.authScheme                | Provide auth scheme.                                                             | string   | Bearer                 |
 
 The supported scheme of **tokenLookup**
 
@@ -568,9 +575,6 @@ The supported scheme of **tokenLookup**
 // Possible values:
 // - "header:<name>"
 // - "query:<name>"
-// - "param:<name>"
-// - "cookie:<name>"
-// - "form:<name>"
 // Multiply sources example:
 // - "header: Authorization,cookie: myowncookie"
 ```
@@ -788,11 +792,18 @@ gf:
 #            reqPerSec: 0                                  # Optional, default: 1000000
 #      jwt:
 #        enabled: true                                     # Optional, default: false
-#        signingKey: "my-secret"                           # Required
-#        ignore: [""]                                      # Optional, default: []
-#        signingKeys:                                      # Optional
-#          - "key:value"
-#        signingAlgo: ""                                   # Optional, default: "HS256"
+#        ignore: [ "" ]                                    # Optional, default: []
+#        signerEntry: ""                                   # Optional, default: ""
+#        symmetric:                                        # Optional
+#          algorithm: ""                                   # Required, default: ""
+#          token: ""                                       # Optional, default: ""
+#          tokenPath: ""                                   # Optional, default: ""
+#        asymmetric:                                       # Optional
+#          algorithm: ""                                   # Required, default: ""
+#          privateKey: ""                                  # Optional, default: ""
+#          privateKeyPath: ""                              # Optional, default: ""
+#          publicKey: ""                                   # Optional, default: ""
+#          publicKeyPath: ""                               # Optional, default: ""
 #        tokenLookup: "header:<name>"                      # Optional, default: "header:Authorization"
 #        authScheme: "Bearer"                              # Optional, default: "Bearer"
 #      secure:
