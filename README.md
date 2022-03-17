@@ -622,7 +622,7 @@ The supported scheme of **tokenLookup**
 #logger:
 #  - name: my-logger                                       # Required
 #    description: "Description of entry"                   # Optional
-#    locale: "*::*::*::*"                                  # Optional, default: "*::*::*::*"
+#    domain: "*"                                           # Optional, default: "*"
 #    zap:                                                  # Optional
 #      level: info                                         # Optional, default: info
 #      development: true                                   # Optional, default: true
@@ -667,7 +667,7 @@ The supported scheme of **tokenLookup**
 #event:
 #  - name: my-event                                        # Required
 #    description: "Description of entry"                   # Optional
-#    locale: "*::*::*::*"                                  # Optional, default: "*::*::*::*"
+#    domain: "*"                                           # Optional, default: "*"
 #    encoding: console                                     # Optional, default: console
 #    outputPaths: ["stdout"]                               # Optional, default: [stdout]
 #    lumberjack:                                           # Optional, default: nil
@@ -691,14 +691,14 @@ The supported scheme of **tokenLookup**
 #cert:
 #  - name: my-cert                                         # Required
 #    description: "Description of entry"                   # Optional, default: ""
-#    locale: "*::*::*::*"                                  # Optional, default: *::*::*::*
+#    domain: "*"                                           # Optional, default: "*"
 #    caPath: "certs/ca.pem"                                # Optional, default: ""
 #    certPemPath: "certs/server-cert.pem"                  # Optional, default: ""
 #    keyPemPath: "certs/server-key.pem"                    # Optional, default: ""
 #config:
 #  - name: my-config                                       # Required
 #    description: "Description of entry"                   # Optional, default: ""
-#    locale: "*::*::*::*"                                  # Optional, default: *::*::*::*
+#    domain: "*"                                           # Optional, default: "*"
 ##    path: "config/config.yaml"                            # Optional
 #    envPrefix: ""                                         # Optional, default: ""
 #    content:                                              # Optional, defualt: empty map
