@@ -2,8 +2,7 @@
 //
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
-//
-// Package rkgfjwt is a JWT middleware for GoFrame framework
+
 package rkgfjwt
 
 import (
@@ -24,7 +23,7 @@ func Middleware(opts ...rkmidjwt.Option) ghttp.HandlerFunc {
 
 		// case 1: error response
 		if beforeCtx.Output.ErrResp != nil {
-			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Err.Code, beforeCtx.Output.ErrResp)
+			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Code(), beforeCtx.Output.ErrResp)
 			return
 		}
 

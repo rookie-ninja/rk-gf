@@ -623,6 +623,7 @@ The supported scheme of **tokenLookup**
 #  - name: my-logger                                       # Required
 #    description: "Description of entry"                   # Optional
 #    domain: "*"                                           # Optional, default: "*"
+#    default: false                                        # Optional, default: false, use as default logger entry
 #    zap:                                                  # Optional
 #      level: info                                         # Optional, default: info
 #      development: true                                   # Optional, default: true
@@ -668,6 +669,7 @@ The supported scheme of **tokenLookup**
 #  - name: my-event                                        # Required
 #    description: "Description of entry"                   # Optional
 #    domain: "*"                                           # Optional, default: "*"
+#    default: false                                        # Optional, default: false, use as default event entry
 #    encoding: console                                     # Optional, default: console
 #    outputPaths: ["stdout"]                               # Optional, default: [stdout]
 #    lumberjack:                                           # Optional, default: nil
@@ -699,7 +701,7 @@ The supported scheme of **tokenLookup**
 #  - name: my-config                                       # Required
 #    description: "Description of entry"                   # Optional, default: ""
 #    domain: "*"                                           # Optional, default: "*"
-##    path: "config/config.yaml"                            # Optional
+#    path: "config/config.yaml"                            # Optional
 #    envPrefix: ""                                         # Optional, default: ""
 #    content:                                              # Optional, defualt: empty map
 #      key: value
@@ -732,6 +734,9 @@ gf:
 #      path: "/static"                                     # Optional, default: /static
 #      sourceType: local                                   # Optional, options: local, embed.FS can be used either, need to specify in code
 #      sourcePath: "."                                     # Optional, full path of source directory
+#    pprof:
+#      enabled: true                                       # Optional, default: false
+#      path: "/pprof"                                      # Optional, default: /pprof
 #    prom:
 #      enabled: true                                       # Optional, default: false
 #      path: ""                                            # Optional, default: "/metrics"
@@ -744,6 +749,7 @@ gf:
 #        certEntry: my-cert                                # Optional, default: "", reference of cert entry declared above
 #    middleware:
 #      ignore: [""]                                        # Optional, default: []
+#      errorModel: google                                  # Optional, default: google, [amazon, google] are supported options
 #      logging:
 #        enabled: true                                     # Optional, default: false
 #        ignore: [""]                                      # Optional, default: []
@@ -794,6 +800,7 @@ gf:
 #        enabled: true                                     # Optional, default: false
 #        ignore: [ "" ]                                    # Optional, default: []
 #        signerEntry: ""                                   # Optional, default: ""
+#        skipVerify: false                                 # Optional, default: false
 #        symmetric:                                        # Optional
 #          algorithm: ""                                   # Required, default: ""
 #          token: ""                                       # Optional, default: ""

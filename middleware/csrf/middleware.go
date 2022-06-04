@@ -24,7 +24,7 @@ func Middleware(opts ...rkmidcsrf.Option) ghttp.HandlerFunc {
 		set.Before(beforeCtx)
 
 		if beforeCtx.Output.ErrResp != nil {
-			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Err.Code, beforeCtx.Output.ErrResp)
+			ctx.Response.WriteStatus(beforeCtx.Output.ErrResp.Code(), beforeCtx.Output.ErrResp)
 			return
 		}
 

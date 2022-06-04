@@ -21,9 +21,9 @@ func Middleware(opts ...rkmidpanic.Option) ghttp.HandlerFunc {
 	return func(ctx *ghttp.Request) {
 		ctx.SetCtxVar(rkmid.EntryNameKey, set.GetEntryName())
 
-		handlerFunc := func(resp *rkerror.ErrorResp) {
+		handlerFunc := func(resp rkerror.ErrorInterface) {
 			ctx.Response.ClearBuffer()
-			ctx.Response.WriteStatus(resp.Err.Code, resp)
+			ctx.Response.WriteStatus(resp.Code(), resp)
 		}
 		beforeCtx := set.BeforeCtx(rkgfctx.GetEvent(ctx), rkgfctx.GetLogger(ctx), handlerFunc)
 		set.Before(beforeCtx)
