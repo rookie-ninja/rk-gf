@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/rookie-ninja/rk-gf/branch/master/graph/badge.svg?token=E4JQQ0KCHB)](https://codecov.io/gh/rookie-ninja/rk-gf)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Interceptor & bootstrapper designed for [gogf/gf](https://github.com/gogf/gf) web framework. [Documentation](https://rkdev.info/docs/bootstrapper/user-guide/gf-golang/).
+Interceptor & bootstrapper designed for [gogf/gf](https://github.com/gogf/gf) web framework. [Documentation](https://docs.rkdev.info/docs/rk-boot/getting-started/gf/).
 
 This belongs to [rk-boot](https://github.com/rookie-ninja/rk-boot) family. We suggest use this lib from [rk-boot](https://github.com/rookie-ninja/rk-boot).
 
