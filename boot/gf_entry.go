@@ -26,7 +26,7 @@ import (
 	"github.com/rookie-ninja/rk-entry/v2/middleware/tracing"
 	rkgfinter "github.com/rookie-ninja/rk-gf/middleware"
 	"github.com/rookie-ninja/rk-gf/middleware/auth"
-	"github.com/rookie-ninja/rk-gf/middleware/cors"
+	rkgfcors "github.com/rookie-ninja/rk-gf/middleware/cors"
 	"github.com/rookie-ninja/rk-gf/middleware/csrf"
 	"github.com/rookie-ninja/rk-gf/middleware/jwt"
 	"github.com/rookie-ninja/rk-gf/middleware/log"
@@ -215,6 +215,12 @@ func RegisterGfEntryYAML(raw []byte) map[string]rkentry.Entry {
 				rkmidtrace.ToOptions(&element.Middleware.Trace, element.Name, GfEntryType)...))
 		}
 
+		// cors middleware
+		if element.Middleware.Cors.Enabled {
+			inters = append(inters, rkgfcors.Middleware(
+				rkmidcors.ToOptions(&element.Middleware.Cors, element.Name, GfEntryType)...))
+		}
+
 		// jwt middleware
 		if element.Middleware.Jwt.Enabled {
 			inters = append(inters, rkgfjwt.Middleware(
@@ -231,12 +237,6 @@ func RegisterGfEntryYAML(raw []byte) map[string]rkentry.Entry {
 		if element.Middleware.Csrf.Enabled {
 			inters = append(inters, rkgfcsrf.Middleware(
 				rkmidcsrf.ToOptions(&element.Middleware.Csrf, element.Name, GfEntryType)...))
-		}
-
-		// Did we enabled cors interceptor?
-		if element.Middleware.Cors.Enabled {
-			inters = append(inters, rkgfcors.Middleware(
-				rkmidcors.ToOptions(&element.Middleware.Cors, element.Name, GfEntryType)...))
 		}
 
 		// meta middleware
