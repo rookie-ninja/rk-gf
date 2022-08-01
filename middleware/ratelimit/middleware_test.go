@@ -38,9 +38,11 @@ func TestMiddleware_WithoutOptions(t *testing.T) {
 func TestInterceptor_WithTokenBucket(t *testing.T) {
 	defer assertNotPanic(t)
 
+	reqPerSec := 1
+
 	inter := Middleware(
 		rkmidlimit.WithAlgorithm(rkmidlimit.LeakyBucket),
-		rkmidlimit.WithReqPerSec(1),
+		rkmidlimit.WithReqPerSec(&reqPerSec),
 		rkmidlimit.WithReqPerSecByPath("ut-path", 1))
 	server := startServer(t, func(ctx *ghttp.Request) {
 		ctx.Response.WriteHeader(http.StatusOK)
@@ -56,9 +58,11 @@ func TestInterceptor_WithTokenBucket(t *testing.T) {
 func TestInterceptor_WithLeakyBucket(t *testing.T) {
 	defer assertNotPanic(t)
 
+	reqPerSec := 1
+
 	inter := Middleware(
 		rkmidlimit.WithAlgorithm(rkmidlimit.LeakyBucket),
-		rkmidlimit.WithReqPerSec(1),
+		rkmidlimit.WithReqPerSec(&reqPerSec),
 		rkmidlimit.WithReqPerSecByPath("ut-path", 1))
 	server := startServer(t, func(ctx *ghttp.Request) {
 		ctx.Response.WriteHeader(http.StatusOK)
