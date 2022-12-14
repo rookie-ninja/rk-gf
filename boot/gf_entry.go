@@ -40,7 +40,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"net/http/pprof"
-	"path/filepath"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -353,21 +353,21 @@ func (entry *GfEntry) Bootstrap(ctx context.Context) {
 	// Is swagger enabled?
 	if entry.IsSwEnabled() {
 		// Register swagger path into Router.
-		entry.Server.BindHandler(filepath.Join(entry.SwEntry.Path, "*any"), ghttp.WrapF(entry.SwEntry.ConfigFileHandler()))
+		entry.Server.BindHandler(path.Join(entry.SwEntry.Path, "*any"), ghttp.WrapF(entry.SwEntry.ConfigFileHandler()))
 		entry.SwEntry.Bootstrap(ctx)
 	}
 
 	// Is Docs enabled?
 	if entry.IsDocsEnabled() {
 		// Bootstrap Docs entry.
-		entry.Server.BindHandler(filepath.Join(entry.DocsEntry.Path, "*any"), ghttp.WrapF(entry.DocsEntry.ConfigFileHandler()))
+		entry.Server.BindHandler(path.Join(entry.DocsEntry.Path, "*any"), ghttp.WrapF(entry.DocsEntry.ConfigFileHandler()))
 		entry.DocsEntry.Bootstrap(ctx)
 	}
 
 	// Is static file handler enabled?
 	if entry.IsStaticFileHandlerEnabled() {
 		// Register path into Router.
-		entry.Server.BindHandler(filepath.Join(entry.StaticFileEntry.Path, "*any"), ghttp.WrapF(entry.StaticFileEntry.GetFileHandler()))
+		entry.Server.BindHandler(path.Join(entry.StaticFileEntry.Path, "*any"), ghttp.WrapF(entry.StaticFileEntry.GetFileHandler()))
 		entry.StaticFileEntry.Bootstrap(ctx)
 	}
 
@@ -380,17 +380,17 @@ func (entry *GfEntry) Bootstrap(ctx context.Context) {
 
 	// Is pprof enabled?
 	if entry.IsPProfEnabled() {
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path), ghttp.WrapF(pprof.Index))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "cmdline"), ghttp.WrapF(pprof.Cmdline))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "profile"), ghttp.WrapF(pprof.Profile))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "symbol"), ghttp.WrapF(pprof.Symbol))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "trace"), ghttp.WrapF(pprof.Trace))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "allocs"), ghttp.WrapF(pprof.Handler("allocs").ServeHTTP))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "block"), ghttp.WrapF(pprof.Handler("block").ServeHTTP))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "goroutine"), ghttp.WrapF(pprof.Handler("goroutine").ServeHTTP))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "heap"), ghttp.WrapF(pprof.Handler("heap").ServeHTTP))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "mutex"), ghttp.WrapF(pprof.Handler("mutex").ServeHTTP))
-		entry.Server.BindHandler(filepath.Join(entry.PProfEntry.Path, "threadcreate"), ghttp.WrapF(pprof.Handler("threadcreate").ServeHTTP))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path), ghttp.WrapF(pprof.Index))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "cmdline"), ghttp.WrapF(pprof.Cmdline))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "profile"), ghttp.WrapF(pprof.Profile))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "symbol"), ghttp.WrapF(pprof.Symbol))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "trace"), ghttp.WrapF(pprof.Trace))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "allocs"), ghttp.WrapF(pprof.Handler("allocs").ServeHTTP))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "block"), ghttp.WrapF(pprof.Handler("block").ServeHTTP))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "goroutine"), ghttp.WrapF(pprof.Handler("goroutine").ServeHTTP))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "heap"), ghttp.WrapF(pprof.Handler("heap").ServeHTTP))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "mutex"), ghttp.WrapF(pprof.Handler("mutex").ServeHTTP))
+		entry.Server.BindHandler(path.Join(entry.PProfEntry.Path, "threadcreate"), ghttp.WrapF(pprof.Handler("threadcreate").ServeHTTP))
 	}
 
 	go entry.startServer(event, logger)
