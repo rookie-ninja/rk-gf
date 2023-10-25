@@ -63,7 +63,7 @@ func TestMiddleware_HappyCase(t *testing.T) {
 }
 
 func startServer(t *testing.T, usherHandler ghttp.HandlerFunc, inters ...ghttp.HandlerFunc) *ghttp.Server {
-	server := g.Server(rkmid.GenerateRequestId())
+	server := g.Server(rkmid.GenerateRequestId(nil))
 	server.SetPort(8080)
 	server.SetDumpRouterMap(false)
 	server.BindMiddlewareDefault(inters...)
